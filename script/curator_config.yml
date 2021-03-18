@@ -1,0 +1,5 @@
+curator:
+    nfs: /home/karman/data/
+    refGenome: /nfs/PROBIO/autoseq-genome/autoseq-genome.json
+    library: /nfs/PROBIO/INBOX
+    scratch: /scratch/tmp/liqbio-tmp/
