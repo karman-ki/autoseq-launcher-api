@@ -5,6 +5,8 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from flask import current_app
 
+import paramiko
+import time
 import requests
 import json
 import os 
@@ -167,6 +169,11 @@ def get_project_list():
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
 
+def save_orderform(data):
+    jsondata = json.loads(data)
+    return {'status': True, 'data': jsondata, 'error': ''}, 200
+
+
 def start_pipeline(project_id):
     res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0'".format(project_id))
     row = generate_list_to_dict(res)
@@ -192,6 +199,34 @@ def start_pipeline(project_id):
     if(not isdir):
         os.makedirs(outdir)
 
+    ip_address = current_app.config['ANCHORAGE_ADDR']
+    username = current_app.config['ANCHORAGE_USERNAME']
+    password = current_app.config['ANCHORAGE_PWD']
+
+    print(ip_address, password, username)
+
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=ip_address,username=username, password=password)
+
+    print("Successful connection", ip_address)
+    ssh_client.invoke_shell()
+
     cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
-    return cmd, 200
+
+    cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; autoseq liqbio-prepare --help'
+
+    command = {
+        1:cmd
+    }
+    
+    result = ''
+    for key,value in command.items():
+        stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
+        outlines=stdout.readlines()
+        result=''.join(outlines)
+
+    ssh_client.close()
+
+    return result, 200
     # subprocess.call(cmd , shell=True)

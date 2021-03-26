@@ -19,3 +19,7 @@ MOUNT_POINT_PSFF = '/data/PSFF/'
 MOUNT_REF_GENOME_PATH = '/nfs/PROBIO/autoseq-genome/autoseq-genome.json'
 MOUNT_LIB_PATH = '/nfs/PROBIO/INBOX'
 MOUNT_SCRATCH_PATH = '/scratch/tmp/liqbio-tmp/'
+
+ANCHORAGE_ADDR = "anchorage.meb.ki.se"
+ANCHORAGE_USERNAME = "prosp"
+ANCHORAGE_PWD = "16Vinter16"

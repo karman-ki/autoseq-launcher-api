@@ -57,6 +57,22 @@ class GetProjectList(Resource):
         return result, errorcode
 
 
+@ctm.route('/save/ordeform')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class LeaderboardSaveOrdeform(Resource):
+    @api.expect(save_file_arguments, validate=True)
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = save_file_arguments.parse_args()
+        result, errorcode = save_orderform(args['data'])
+        return result, errorcode 
+
 @ctm.route('/generate_barcode')
 @api.response(200, 'Database connected successfully')
 @api.response(400, 'Database connection failed')               
