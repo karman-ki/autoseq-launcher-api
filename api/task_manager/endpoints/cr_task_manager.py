@@ -88,7 +88,9 @@ class GenerateProjectBarcode(Resource):
         args = generate_barcode_arguments.parse_args()
         project_name = args['project_name']
         search_pattern = args['search_pattern']
-        result, errorcode = generate_barcodes(project_name, search_pattern)
+        sample_arr = args['sample_arr']
+        file_name = args['file_name']
+        result, errorcode = generate_barcodes(project_name, search_pattern, sample_arr, file_name)
         return result, errorcode
 
 

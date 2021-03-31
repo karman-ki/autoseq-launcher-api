@@ -4,6 +4,8 @@ generate_barcode_arguments = reqparse.RequestParser()
 generate_barcode_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
                               help="valid Project names: 'PROBIO', 'PSFF'")
 generate_barcode_arguments.add_argument('search_pattern', type=str, required=True,  help='example : PN20210210')
+generate_barcode_arguments.add_argument('sample_arr',  type=str, required=True, help="Jsondata")
+generate_barcode_arguments.add_argument('file_name',  type=str, required=True, help="Upload file name")
 
 generate_config_arguments = reqparse.RequestParser()
 generate_config_arguments.add_argument('barcode_id', type=str, required=True)

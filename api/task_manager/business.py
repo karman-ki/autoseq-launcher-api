@@ -31,6 +31,7 @@ def generate_list_to_dict(result):
 
 def validate_cfdna_file_size(file_arr):
     cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(2))]
+    print(cfdna_group)
     for cf in cfdna_group:
         if len(cf) >= 2:
             symb_source_dir = cf[1][1]
@@ -63,11 +64,12 @@ def get_file_list(proj_nfs_path, sample_pattern):
     lst = os.listdir(proj_nfs_path)
     lst.sort()
     file_lst_arr = []
-    for f in lst:
+    for f in os.listdir(proj_nfs_path):
         sample_id = f.split('-')[2]
         if fnmatch.fnmatch(f, sample_pattern):
-            file_size = subprocess.check_output(['du','-sh', os.path.join(proj_nfs_path, f)]).split()[0].decode('utf-8')
-            file_lst_arr.append([file_size, os.path.join(proj_nfs_path, f), f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+            file_path = os.path.join(proj_nfs_path, f)
+            file_size = subprocess.check_output(['du','-sh', file_path]).split()[0].decode('utf-8')
+            file_lst_arr.append([file_size, file_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
     return file_lst_arr
 
 def generate_autoseq_config(barcode_filename, config_path):
@@ -111,15 +113,29 @@ def check_db_connection():
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
-def generate_barcodes(project_name, search_pattern):
+def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
 
-    print(project_name, search_pattern)
     nfs_path = current_app.config[project_name]
+    project_name = 'PB' if project_name == 'PROBIO' else project_name
 
     project_nfs_path = nfs_path +'INBOX/'
-    sample_pattern = project_name+'-*'+search_pattern
-    file_info_arr = get_file_list(project_nfs_path, sample_pattern)
-    
+
+    if(search_pattern):
+        sample_pattern = project_name+'-*'+search_pattern
+        file_info_arr = get_file_list(project_nfs_path, sample_pattern)
+    else:
+        search_pattern = file_name
+        file_lst_arr = sample_arr.split(',')
+        file_info_arr = []
+
+        for f in file_lst_arr:
+            proj_nfs_path = os.path.join(project_nfs_path, f)
+            if(os.path.isdir(proj_nfs_path)):
+                file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
+                file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+        
+    print(file_info_arr)
+
     if(file_info_arr):
         validate_cfdna_file_size(file_info_arr)
 

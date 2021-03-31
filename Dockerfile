@@ -7,6 +7,6 @@ ENV app_location /usr/src
 COPY . $app_location/app
 WORKDIR $app_location/app
 RUN pip install -r requirements.txt
-EXPOSE 8000
-ENTRYPOINT ["python3"]
+EXPOSE 8100
+ENTRYPOINT ["python"]
 CMD ["app.py"]

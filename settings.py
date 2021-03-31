@@ -14,8 +14,11 @@ SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@127.0.0.1:543
 SQLALCHEMY_BINDS = "" 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-MOUNT_POINT_PROBIO = '/data/PROBIO/'
-MOUNT_POINT_PSFF = '/data/PSFF/'
+# MOUNT_POINT_PROBIO = '/nfs/PROBIO/'
+# MOUNT_POINT_PSFF = '/nfs/PSFF/'
+
+MOUNT_POINT_PROBIO = '/home/karman/data/PROBIO/'
+MOUNT_POINT_PSFF = '/home/karman/data/PSFF/'
 MOUNT_REF_GENOME_PATH = '/nfs/PROBIO/autoseq-genome/autoseq-genome.json'
 MOUNT_LIB_PATH = '/nfs/PROBIO/INBOX'
 MOUNT_SCRATCH_PATH = '/scratch/tmp/liqbio-tmp/'
