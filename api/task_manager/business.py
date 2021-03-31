@@ -184,6 +184,14 @@ def get_project_list():
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
+def get_job_list():
+    try:
+        res = db.session.execute("select * from jobs_t order by job_id desc")
+        row = generate_list_to_dict(res)
+        return {'status': True, 'data': row, 'error': ''}, 200
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
 
 def save_orderform(data):
     jsondata = json.loads(data)
@@ -241,8 +249,18 @@ def start_pipeline(project_id):
         stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
         outlines=stdout.readlines()
         result=''.join(outlines)
+       
 
     ssh_client.close()
 
-    return result, 200
-    # subprocess.call(cmd , shell=True)
+    try:
+        db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
+        db.session.commit()
+        machine_type = ''
+        db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, log_path))
+        db.session.commit()
+        
+        return {'status': True, 'data': result, 'error': str(e)}, 200
+        
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400

@@ -56,6 +56,19 @@ class GetProjectList(Resource):
         result, errorcode = get_project_list()
         return result, errorcode
 
+@ctm.route('/job_list')
+@api.response(200, 'Database connected successfully')
+@api.response(400, 'Database connection failed')               
+class GetJobList(Resource):           
+    def get(self):
+        """
+        Get the Job information
+        ```
+
+        ```
+        """
+        result, errorcode = get_job_list()
+        return result, errorcode
 
 @ctm.route('/save/ordeform')
 @api.response(200, 'Update the sample information')

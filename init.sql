@@ -3,6 +3,7 @@ CREATE DATABASE curator_task_manager;
 GRANT ALL PRIVILEGES ON DATABASE curator_task_manager TO referral_writer;
 
 CREATE TYPE project_status AS ENUM ('0','1', '2', '-1');
+CREATE TYPE job_status AS ENUM ('0','1', '2', '-1');
 CREATE TYPE barcode_status AS ENUM ('0','1');
 
 CREATE TABLE barcodes_t
@@ -27,6 +28,19 @@ CREATE TABLE projects_t
      tumor   VARCHAR(100),
      config_path TEXT,
      pro_status         project_status,
+     create_time TIMESTAMP,
+     update_time TIMESTAMP
+  ); 
+
+
+  CREATE TABLE jobs_t
+  (
+     job_id          SERIAL PRIMARY KEY,
+     project_id  SERIAL REFERENCES projects_t (p_id),
+     cores   VARCHAR(100),
+     machine_type   VARCHAR(100),
+     log_path TEXT,
+     job_status         job_status,
      create_time TIMESTAMP,
      update_time TIMESTAMP
   ); 
