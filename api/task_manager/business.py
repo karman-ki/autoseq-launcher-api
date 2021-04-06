@@ -269,7 +269,7 @@ def start_pipeline(project_id):
         db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, log_path))
         db.session.commit()
         
-        return {'status': True, 'data': result, 'error': str(e)}, 200
+        return {'status': True, 'data': result, 'error': ''}, 200
         
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400
