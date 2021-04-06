@@ -28,6 +28,8 @@ CREATE TABLE projects_t
      tumor   VARCHAR(100),
      config_path TEXT,
      pro_status         project_status,
+     cores   VARCHAR(100),
+     machine_type   VARCHAR(100),
      create_time TIMESTAMP,
      update_time TIMESTAMP
   ); 

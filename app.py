@@ -28,9 +28,10 @@ def configure_app(flask_app):
     flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
     flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
 
-    flask_app.config['ANCHORAGE_ADDR'] = settings.ANCHORAGE_ADDR
-    flask_app.config['ANCHORAGE_USERNAME'] = settings.ANCHORAGE_USERNAME
-    flask_app.config['ANCHORAGE_PWD'] = settings.ANCHORAGE_PWD
+    flask_app.config['ANCHORAGE'] = {'address': settings.ANCHORAGE_ADDR, 'username': settings.ANCHORAGE_USERNAME, 'password': settings.ANCHORAGE_PWD}
+    flask_app.config['SCALAR'] = {'address': settings.SCALAR_ADDR, 'username': settings.SCALAR_USERNAME, 'password': settings.SCALAR_PWD}
+    flask_app.config['VECTOR'] = {'address': settings.VECTOR_ADDR, 'username': settings.VECTOR_USERNAME, 'password': settings.VECTOR_PWD}
+
 
 def initialize_app(flask_app):
     configure_app(flask_app)

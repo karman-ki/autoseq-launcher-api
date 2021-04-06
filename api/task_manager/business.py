@@ -31,7 +31,6 @@ def generate_list_to_dict(result):
 
 def validate_cfdna_file_size(file_arr):
     cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(2))]
-    print(cfdna_group)
     for cf in cfdna_group:
         if len(cf) >= 2:
             symb_source_dir = cf[1][1]
@@ -134,7 +133,6 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
                 file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
                 file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
         
-    print(file_info_arr)
 
     if(file_info_arr):
         validate_cfdna_file_size(file_info_arr)
@@ -199,8 +197,10 @@ def save_orderform(data):
 
 
 def start_pipeline(project_id):
-    res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0'".format(project_id))
+    print(project_id)
+    res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))
     row = generate_list_to_dict(res)
+    print(row)
     project_name = row[0]['project_name']
     sdid = row[0]['sample_id']
     cfdna = row[0]['cfdna']
@@ -211,7 +211,9 @@ def start_pipeline(project_id):
     scratch_path = current_app.config['SCRATCH_PATH']
     libdir = current_app.config['LIB_PATH']
     outdir_root = current_app.config[project_name]+'autoseq-output'
-    cores = 8
+    cores = row[0]['cores']
+    machine_type = row[0]['machine_type'].upper()
+
 
     id = cfdna+'_'+normal
 
@@ -220,47 +222,74 @@ def start_pipeline(project_id):
     log_path = os.path.join(outdir,id)+'.nohup.log'
     isdir = os.path.isdir(outdir)
 
-    if(not isdir):
-        os.makedirs(outdir)
-
-    ip_address = current_app.config['ANCHORAGE_ADDR']
-    username = current_app.config['ANCHORAGE_USERNAME']
-    password = current_app.config['ANCHORAGE_PWD']
-
-    print(ip_address, password, username)
-
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname=ip_address,username=username, password=password)
-
-    print("Successful connection", ip_address)
-    ssh_client.invoke_shell()
-
-    cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
-
-    cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; autoseq liqbio-prepare --help'
-
-    command = {
-        1:cmd
-    }
-    
-    result = ''
-    for key,value in command.items():
-        stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
-        outlines=stdout.readlines()
-        result=''.join(outlines)
-       
-
-    ssh_client.close()
-
     try:
+        if(not isdir):
+            os.makedirs(outdir)
+        
+        cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
+
+
+        if machine_type:
+            machine_config = current_app.config[machine_type]
+            ip_address = machine_config['address']
+            username = machine_config['username']
+            password = machine_config['password']
+
+            print(ip_address, password, username)
+
+            ssh_client = paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(hostname=ip_address,username=username, password=password)
+
+            print("Successful connection", ip_address)
+            ssh_client.invoke_shell()
+
+            ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+
+            print(ssh_cmd)
+
+            command = {
+                1:ssh_cmd
+            }
+            
+            result = ''
+            for key,value in command.items():
+                stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
+                outlines=stdout.readlines()
+                result=''.join(outlines)
+            
+
+            ssh_client.close()
+        else: 
+            print('else', cmd)
+            result = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()
-        machine_type = ''
         db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, log_path))
         db.session.commit()
         
         return {'status': True, 'data': result, 'error': str(e)}, 200
         
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
+
+def edit_analysis_info(project_id):
+    try:
+        res = db.session.execute("SELECT p.p_id, p.sample_id, p.cores, p.machine_type from projects_t as p WHERE p.p_id ='{}'".format(project_id))
+        row = generate_list_to_dict(res)
+        return {'status': True, 'data': row, 'error': ''}, 200
+
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
+
+def update_analysis_info(project_id, cores, machine_type):
+    try:
+        db.session.execute("UPDATE projects_t SET  cores = '{}', machine_type ='{}' WHERE p_id ='{}'".format(cores, machine_type, project_id))
+        db.session.commit()
+        return {'status': True, 'data': 'update successfully', 'error': ''}, 200
+
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400

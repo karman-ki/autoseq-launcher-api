@@ -10,9 +10,13 @@ generate_barcode_arguments.add_argument('file_name',  type=str, required=True, h
 generate_config_arguments = reqparse.RequestParser()
 generate_config_arguments.add_argument('barcode_id', type=str, required=True)
 
-
 start_pipeline_arguments = reqparse.RequestParser()
 start_pipeline_arguments.add_argument('project_id', type=str, required=True)
 
 save_file_arguments = reqparse.RequestParser()
 save_file_arguments.add_argument('data',  type=str, required=True, help="Jsondata")
+
+update_pipeline_arguments = reqparse.RequestParser()
+update_pipeline_arguments.add_argument('project_id', type=str, required=True)
+update_pipeline_arguments.add_argument('cores', type=str, required=True)
+update_pipeline_arguments.add_argument('machine_type', type=str, required=True)

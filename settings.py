@@ -26,3 +26,11 @@ MOUNT_SCRATCH_PATH = '/scratch/tmp/liqbio-tmp/'
 ANCHORAGE_ADDR = "anchorage.meb.ki.se"
 ANCHORAGE_USERNAME = "prosp"
 ANCHORAGE_PWD = "16Vinter16"
+
+SCALAR_ADDR = "anchorage.meb.ki.se"
+SCALAR_USERNAME = "prosp"
+SCALAR_PWD = "16Vinter16"
+
+VECTOR_ADDR = "anchorage.meb.ki.se"
+VECTOR_USERNAME = "prosp"
+VECTOR_PWD = "16Vinter16"

@@ -25,8 +25,6 @@ class DBConnection(Resource):
         result, errorcode = check_db_connection()
         return result, errorcode
 
-
-
 @ctm.route('/barcode_list')
 @api.response(200, 'Database connected successfully')
 @api.response(400, 'Database connection failed')               
@@ -140,3 +138,39 @@ class GenerateStartPipeline(Resource):
         project_id = args['project_id']
         result, errorcode = start_pipeline(project_id)
         return result, errorcode
+
+@ctm.route('/editAnalysisInfo')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class EditAnalysisInfo(Resource):
+    @api.expect(start_pipeline_arguments, validate=True)       
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = start_pipeline_arguments.parse_args()
+        project_id = args['project_id']
+        result, errorcode = edit_analysis_info(project_id)
+        return result, errorcode 
+
+@ctm.route('/updateAnalysisInfo')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class UpdateAnalysisInfo(Resource):
+    @api.expect(update_pipeline_arguments, validate=True)       
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = update_pipeline_arguments.parse_args()
+        project_id = args['project_id']
+        cores = args['cores']
+        machine_type = args['machine_type']
+        result, errorcode = update_analysis_info(project_id, cores, machine_type)
+        return result, errorcode         
