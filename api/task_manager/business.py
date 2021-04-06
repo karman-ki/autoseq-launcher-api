@@ -176,7 +176,7 @@ def get_barcode_list():
 
 def get_project_list():
     try:
-        res = db.session.execute("select * from projects_t order by p_id desc")
+        res = db.session.execute("SELECT b.project_name, p.* from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id order by p.p_id desc")
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
@@ -184,7 +184,7 @@ def get_project_list():
 
 def get_job_list():
     try:
-        res = db.session.execute("select * from jobs_t order by job_id desc")
+        res = db.session.execute("select p.sample_id, jb.* from jobs_t as jb INNER JOIN projects_t as p ON p.p_id=jb.project_id order by job_id desc")
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
@@ -285,11 +285,35 @@ def edit_analysis_info(project_id):
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
 
+def view_analysis_info(project_id):
+    try:
+        res = db.session.execute("SELECT b.project_name, p.* from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}'".format(project_id))
+        row = generate_list_to_dict(res)
+        return {'status': True, 'data': row, 'error': ''}, 200
+
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
+
 def update_analysis_info(project_id, cores, machine_type):
     try:
         db.session.execute("UPDATE projects_t SET  cores = '{}', machine_type ='{}' WHERE p_id ='{}'".format(cores, machine_type, project_id))
         db.session.commit()
         return {'status': True, 'data': 'update successfully', 'error': ''}, 200
+
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
+def view_log_analysis_info(job_id):
+    try:
+        res = db.session.execute("SELECT log_path from jobs_t WHERE job_id ='{}' limit 1".format(job_id))
+        row = generate_list_to_dict(res)
+        print(row)
+        log_path = row[0]['log_path']
+        f=open(log_path, "r")
+        contents =f.read()
+        f.close()
+        return {'status': True, 'data': contents, 'error': ''}, 200
 
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400

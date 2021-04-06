@@ -139,6 +139,23 @@ class GenerateStartPipeline(Resource):
         result, errorcode = start_pipeline(project_id)
         return result, errorcode
 
+@ctm.route('/viewAnalysisInfo')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class ViewAnalysisInfo(Resource):
+    @api.expect(start_pipeline_arguments, validate=True)       
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = start_pipeline_arguments.parse_args()
+        project_id = args['project_id']
+        result, errorcode = view_analysis_info(project_id)
+        return result, errorcode 
+
 @ctm.route('/editAnalysisInfo')
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
@@ -173,4 +190,21 @@ class UpdateAnalysisInfo(Resource):
         cores = args['cores']
         machine_type = args['machine_type']
         result, errorcode = update_analysis_info(project_id, cores, machine_type)
-        return result, errorcode         
+        return result, errorcode
+
+@ctm.route('/getPipelineLog')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class ViewAnalysisLogInfo(Resource):
+    @api.expect(view_pipeline_log_arguments, validate=True)       
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = view_pipeline_log_arguments.parse_args()
+        job_id = args['job_id']
+        result, errorcode = view_log_analysis_info(job_id)
+        return result, errorcode  
