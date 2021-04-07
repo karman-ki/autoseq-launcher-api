@@ -77,10 +77,11 @@ def generate_autoseq_config(barcode_filename, config_path):
         os.makedirs(config_path)
     try:
         cmd = 'autoseq liqbio-prepare --outdir {} {}'.format(config_path, barcode_filename)
-        subprocess.call(cmd , shell=True)
+        ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+        subprocess.call(ssh_cmd , shell=True)
         return True
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def insert_project_config(barcode_id, config_path):
@@ -95,13 +96,14 @@ def insert_project_config(barcode_id, config_path):
                 tumor = '|'.join(data['T'])
                 sample_id = data['sdid']
                 try:
-                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path))
+                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path))
                     db.session.commit()
+                    return {'status': True, 'data': 'Insert Successfully', 'error': ''}, 200
                 except Exception as e:
-                    return {'status': True, 'data': [], 'error': str(e)}, 400
-        return True
+                    return {'status': False, 'data': [], 'error': str(e)}, 400
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        print(e)
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def check_db_connection():
@@ -110,7 +112,7 @@ def check_db_connection():
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
 
@@ -153,18 +155,25 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
 
             return {'status': True, 'data': row, 'error': ''}, 200
         except Exception as e:
-            return {'status': True, 'data': [], 'error': str(e)}, 400
+            return {'status': False, 'data': [], 'error': str(e)}, 400
     else:
         return {'status': True, 'data': file_info_arr, 'error': ''}, 200
 
 
-def generate_configs(barcode_id):
+def generate_config_file(barcode_id):
     res = db.session.execute("SELECT b_id, config_path from barcodes_t WHERE b_id ='{}'".format(barcode_id))
     row = generate_list_to_dict(res)
-    barcode_id = row[0]['b_id']
+    b_id = row[0]['b_id']
     config_path = row[0]['config_path']
-    insert_project_config(barcode_id, config_path)
-    return {'status': True, 'data': row, 'error': ''}, 200
+    try:
+        if not os.listdir(config_path):
+            return {'status': False, 'data': [], 'error': 'Empty directory'}, 400
+        else:
+            response, errorcode = insert_project_config(b_id, config_path)
+            return response, errorcode 
+    except Exception as e:
+            return {'status': False, 'data': [], 'error': str(e)}, 400
+    
 
 def get_barcode_list():
     try:
@@ -172,7 +181,7 @@ def get_barcode_list():
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def get_project_list():
     try:
@@ -180,7 +189,7 @@ def get_project_list():
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def get_job_list():
     try:
@@ -188,7 +197,7 @@ def get_job_list():
         row = generate_list_to_dict(res)
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def save_orderform(data):
@@ -197,10 +206,8 @@ def save_orderform(data):
 
 
 def start_pipeline(project_id):
-    print(project_id)
     res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))
     row = generate_list_to_dict(res)
-    print(row)
     project_name = row[0]['project_name']
     sdid = row[0]['sample_id']
     cfdna = row[0]['cfdna']
@@ -228,6 +235,7 @@ def start_pipeline(project_id):
         
         cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
 
+        ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
 
         if machine_type:
             machine_config = current_app.config[machine_type]
@@ -244,10 +252,6 @@ def start_pipeline(project_id):
             print("Successful connection", ip_address)
             ssh_client.invoke_shell()
 
-            ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
-
-            print(ssh_cmd)
-
             command = {
                 1:ssh_cmd
             }
@@ -261,8 +265,7 @@ def start_pipeline(project_id):
 
             ssh_client.close()
         else: 
-            print('else', cmd)
-            result = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+            result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()
@@ -272,7 +275,7 @@ def start_pipeline(project_id):
         return {'status': True, 'data': result, 'error': ''}, 200
         
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def edit_analysis_info(project_id):
@@ -282,7 +285,7 @@ def edit_analysis_info(project_id):
         return {'status': True, 'data': row, 'error': ''}, 200
 
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def view_analysis_info(project_id):
@@ -292,7 +295,7 @@ def view_analysis_info(project_id):
         return {'status': True, 'data': row, 'error': ''}, 200
 
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
 def update_analysis_info(project_id, cores, machine_type):
@@ -302,13 +305,12 @@ def update_analysis_info(project_id, cores, machine_type):
         return {'status': True, 'data': 'update successfully', 'error': ''}, 200
 
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def view_log_analysis_info(job_id):
     try:
         res = db.session.execute("SELECT log_path from jobs_t WHERE job_id ='{}' limit 1".format(job_id))
         row = generate_list_to_dict(res)
-        print(row)
         log_path = row[0]['log_path']
         f=open(log_path, "r")
         contents =f.read()
@@ -316,4 +318,4 @@ def view_log_analysis_info(job_id):
         return {'status': True, 'data': contents, 'error': ''}, 200
 
     except Exception as e:
-        return {'status': True, 'data': [], 'error': str(e)}, 400
+        return {'status': False, 'data': [], 'error': str(e)}, 400

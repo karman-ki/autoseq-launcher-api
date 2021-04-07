@@ -119,7 +119,7 @@ class GenerateProjectConfig(Resource):
         """
         args = generate_config_arguments.parse_args()
         barcode_id = args['barcode_id']
-        result, errorcode = generate_configs(barcode_id)
+        result, errorcode = generate_config_file(barcode_id)
         return result, errorcode
 
 @ctm.route('/start_pipline')
@@ -139,7 +139,7 @@ class GenerateStartPipeline(Resource):
         result, errorcode = start_pipeline(project_id)
         return result, errorcode
 
-@ctm.route('/viewAnalysisInfo')
+@ctm.route('/view_analysis_info')
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
 class ViewAnalysisInfo(Resource):
@@ -156,7 +156,7 @@ class ViewAnalysisInfo(Resource):
         result, errorcode = view_analysis_info(project_id)
         return result, errorcode 
 
-@ctm.route('/editAnalysisInfo')
+@ctm.route('/edit_analysis_info')
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
 class EditAnalysisInfo(Resource):
@@ -173,7 +173,7 @@ class EditAnalysisInfo(Resource):
         result, errorcode = edit_analysis_info(project_id)
         return result, errorcode 
 
-@ctm.route('/updateAnalysisInfo')
+@ctm.route('/update_analysis_info')
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
 class UpdateAnalysisInfo(Resource):
@@ -192,7 +192,7 @@ class UpdateAnalysisInfo(Resource):
         result, errorcode = update_analysis_info(project_id, cores, machine_type)
         return result, errorcode
 
-@ctm.route('/getPipelineLog')
+@ctm.route('/get_pipeline_log')
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
 class ViewAnalysisLogInfo(Resource):
