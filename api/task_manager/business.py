@@ -30,7 +30,7 @@ def generate_list_to_dict(result):
     return row
 
 def validate_cfdna_file_size(file_arr):
-    cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(2))]
+    cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
     for cf in cfdna_group:
         if len(cf) >= 2:
             symb_source_dir = cf[1][1]
@@ -38,10 +38,11 @@ def validate_cfdna_file_size(file_arr):
             target_dir = cf[0][1] + '_orig'
 
             isdir = os.path.isdir(target_dir)
-            if(not isdir):
-                os.makedirs(target_dir)
-            else:
-                print('directory already created : {}'.format(target_dir))
+            try:
+                os.mkdir(target_dir)
+                print("Directory " , target_dir,  " Created ")
+            except FileExistsError:
+                print("Directory " , target_dir,  " already exists")
 
             file_names = os.listdir(source_dir)
             for file_name in file_names:
@@ -59,16 +60,20 @@ def generate_barcode_files(barcode_filename, files):
         for f in files:
             filehandle.write('%s\n' % f)
 
-def get_file_list(proj_nfs_path, sample_pattern):
+def get_file_list(proj_nfs_path, sample_pattern, cfdna_boolean):
     lst = os.listdir(proj_nfs_path)
     lst.sort()
     file_lst_arr = []
     for f in os.listdir(proj_nfs_path):
         sample_id = f.split('-')[2]
         if fnmatch.fnmatch(f, sample_pattern):
-            file_path = os.path.join(proj_nfs_path, f)
-            file_size = subprocess.check_output(['du','-sh', file_path]).split()[0].decode('utf-8')
-            file_lst_arr.append([file_size, file_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+            if(cfdna_boolean):
+                file_path = os.path.join(proj_nfs_path, f)
+                file_size = subprocess.check_output(['du','-sh', file_path]).split()[0].decode('utf-8')
+                file_lst_arr.append([file_size, file_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+            else:
+                file_lst_arr.append(f)
+
     return file_lst_arr
 
 def generate_autoseq_config(barcode_filename, config_path):
@@ -77,8 +82,10 @@ def generate_autoseq_config(barcode_filename, config_path):
         os.makedirs(config_path)
     try:
         cmd = 'autoseq liqbio-prepare --outdir {} {}'.format(config_path, barcode_filename)
-        ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
-        subprocess.call(ssh_cmd , shell=True)
+        #ssh_cmd = 'source /home/prosp/develop/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,  shell=True)
+        out, err = p.communicate()
+        print(out, err)
         return True
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
@@ -102,7 +109,6 @@ def insert_project_config(barcode_id, config_path):
                 except Exception as e:
                     return {'status': False, 'data': [], 'error': str(e)}, 400
     except Exception as e:
-        print(e)
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
 
@@ -123,7 +129,7 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
 
     if(search_pattern):
         sample_pattern = project_name+'-*'+search_pattern
-        file_info_arr = get_file_list(project_nfs_path, sample_pattern)
+        file_info_arr = get_file_list(project_nfs_path, sample_pattern, True)
     else:
         search_pattern = file_name
         file_lst_arr = sample_arr.split(',')
@@ -135,14 +141,23 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
                 file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
                 file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
         
-
     if(file_info_arr):
         validate_cfdna_file_size(file_info_arr)
 
-        curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
+        #curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
+
+        curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
+        try:
+            # Create target Directory
+            os.mkdir(barcode_dir)
+            print("Directory " , barcode_dir,  " Created ")
+        except FileExistsError:
+            print("Directory " , barcode_dir,  " already exists")
+
+        
         barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
         generate_barcode_files(barcode_filename, curr_file_arr)
         config_path = nfs_path+'config/'+current_date
@@ -156,6 +171,7 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
             return {'status': True, 'data': row, 'error': ''}, 200
         except Exception as e:
             return {'status': False, 'data': [], 'error': str(e)}, 400
+        
     else:
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
@@ -235,7 +251,7 @@ def start_pipeline(project_id):
         
         cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
 
-        ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+        #ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
 
         if machine_type:
             machine_config = current_app.config[machine_type]
@@ -251,7 +267,9 @@ def start_pipeline(project_id):
 
             print("Successful connection", ip_address)
             ssh_client.invoke_shell()
-
+            
+            ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+            
             command = {
                 1:ssh_cmd
             }
@@ -265,7 +283,7 @@ def start_pipeline(project_id):
 
             ssh_client.close()
         else: 
-            result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
+            result = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()
