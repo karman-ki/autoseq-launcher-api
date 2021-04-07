@@ -157,7 +157,7 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
         except Exception as e:
             return {'status': False, 'data': [], 'error': str(e)}, 400
     else:
-        return {'status': True, 'data': file_info_arr, 'error': ''}, 200
+        return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
 def generate_config_file(barcode_id):
@@ -167,7 +167,7 @@ def generate_config_file(barcode_id):
     config_path = row[0]['config_path']
     try:
         if not os.listdir(config_path):
-            return {'status': False, 'data': [], 'error': 'Empty directory'}, 400
+            return {'status': True, 'data': [], 'error': 'Config directory is empty'}, 200
         else:
             response, errorcode = insert_project_config(b_id, config_path)
             return response, errorcode 
@@ -272,7 +272,7 @@ def start_pipeline(project_id):
         db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, log_path))
         db.session.commit()
         
-        return {'status': True, 'data': result, 'error': ''}, 200
+        return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
         
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
@@ -302,7 +302,7 @@ def update_analysis_info(project_id, cores, machine_type):
     try:
         db.session.execute("UPDATE projects_t SET  cores = '{}', machine_type ='{}' WHERE p_id ='{}'".format(cores, machine_type, project_id))
         db.session.commit()
-        return {'status': True, 'data': 'update successfully', 'error': ''}, 200
+        return {'status': True, 'data': 'Machine Core and Type updated successfully', 'error': ''}, 200
 
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
