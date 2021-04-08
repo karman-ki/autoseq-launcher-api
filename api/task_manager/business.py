@@ -31,21 +31,24 @@ def generate_list_to_dict(result):
 
 def validate_cfdna_file_size(file_arr):
 
-    cfdna_group = []
-    for k,g in  groupby(file_arr,key=itemgetter(4)):
-        cfdna1 = []
-        for k1,g1 in groupby(g,key=itemgetter(3)):
-            for v,w,x,y,z in g1: 
-                if(y):
-                    cfdna1.append([v,w])
-    cfdna_group.append(cfdna1)
+    cfdna_dict = {}
+    for i,f in enumerate(file_arr):
+        cfdna_boolean = f[3]
+        sample_id = f[4]
+        prev_cfdna = ''
+        if(cfdna_boolean):
+            if(sample_id in cfdna_dict):
+                prev_cfdna = cfdna_dict[sample_id]
+            cfdna_dict[sample_id] = f[1]+','+prev_cfdna
 
+    print(cfdna_dict)
     # cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
-    for cf in cfdna_group:
-        if len(cf) >= 2:
-            symb_source_dir = cf[1][1]
-            source_dir = cf[0][1]
-            target_dir = cf[0][1] + '_orig'
+    for cf in cfdna_dict:
+        cfdna_arr = cfdna_dict[cf].rstrip(',').split(',')
+        if(len(cfdna_arr) >= 2):
+            symb_source_dir = cfdna_arr[1]
+            source_dir = cfdna_arr[0]
+            target_dir = cfdna_arr[0] + '_orig'
 
             isdir = os.path.isdir(target_dir)
             try:
@@ -75,7 +78,7 @@ def get_file_list(proj_nfs_path, sample_pattern, cfdna_boolean):
     lst.sort()
     file_lst_arr = []
     for f in os.listdir(proj_nfs_path):
-        sample_id = f.split('-')[2]
+        sample_id = '-'.join(f.split('-')[1:3])
         if fnmatch.fnmatch(f, sample_pattern):
             if(cfdna_boolean):
                 file_path = os.path.join(proj_nfs_path, f)
@@ -150,16 +153,17 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
         file_info_arr = []
 
         for f in file_lst_arr:
-            sample_id = f.split('-')[2]
+            sample_id = '-'.join(f.split('-')[1:3])
             proj_nfs_path = os.path.join(project_nfs_path, f)
             if(os.path.isdir(proj_nfs_path)):
                 file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
                 file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
         
     if(file_info_arr):
+        print(file_info_arr)
         validate_cfdna_file_size(file_info_arr)
 
-        #curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
+        curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
        
         curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
 
@@ -187,7 +191,6 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
             return {'status': True, 'data': row, 'error': ''}, 200
         except Exception as e:
             return {'status': False, 'data': [], 'error': str(e)}, 400
-        
     else:
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
