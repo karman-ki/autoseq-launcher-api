@@ -110,8 +110,8 @@ def insert_project_config(barcode_id, config_path):
     try : 
         file_list = os.listdir(config_path)
         for f in file_list:
-            config_path = os.path.join(config_path, f)
-            with open(config_path) as json_file:
+            json_path = os.path.join(config_path, f)
+            with open(json_path) as json_file:
                 data = json.load(json_file)
                 cfdna = '|'.join(data['CFDNA'])
                 normal = '|'.join(data['N'])
@@ -120,11 +120,11 @@ def insert_project_config(barcode_id, config_path):
                 machine_type = ''
                 cores = 8
                 try:
-                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path, cores, machine_type))
+                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', '{}', '{}', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path, cores, machine_type))
                     db.session.commit()
-                    return {'status': True, 'data': 'Insert Successfully', 'error': ''}, 200
                 except Exception as e:
-                    return {'status': False, 'data': [], 'error': str(e)}, 400
+                    return {'status': True, 'data': [], 'error': str(e)}, 200
+        return {'status': True, 'data': 'Insert Successfully', 'error': ''}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
