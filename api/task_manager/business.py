@@ -30,7 +30,17 @@ def generate_list_to_dict(result):
     return row
 
 def validate_cfdna_file_size(file_arr):
-    cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
+
+    cfdna_group = []
+    for k,g in  groupby(file_arr,key=itemgetter(4)):
+        cfdna1 = []
+        for k1,g1 in groupby(g,key=itemgetter(3)):
+            for v,w,x,y,z in g1: 
+                if(y):
+                    cfdna1.append([v,w])
+    cfdna_group.append(cfdna1)
+
+    # cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
     for cf in cfdna_group:
         if len(cf) >= 2:
             symb_source_dir = cf[1][1]
@@ -70,8 +80,11 @@ def get_file_list(proj_nfs_path, sample_pattern, cfdna_boolean):
             if(cfdna_boolean):
                 file_path = os.path.join(proj_nfs_path, f)
                 file_size = subprocess.check_output(['du','-sh', file_path]).split()[0].decode('utf-8')
-                file_lst_arr.append([file_size, file_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+                file_lst_arr.append([file_size, file_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
             else:
+                file_lst_arr.append(f)
+        else:
+            if(not cfdna_boolean and not '_orig' in f):
                 file_lst_arr.append(f)
 
     return file_lst_arr
@@ -85,8 +98,7 @@ def generate_autoseq_config(barcode_filename, config_path):
         #ssh_cmd = 'source /home/prosp/develop/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,  shell=True)
         out, err = p.communicate()
-        print(out, err)
-        return True
+        return out, err
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
@@ -102,8 +114,10 @@ def insert_project_config(barcode_id, config_path):
                 normal = '|'.join(data['N'])
                 tumor = '|'.join(data['T'])
                 sample_id = data['sdid']
+                machine_type = ''
+                cores = 8
                 try:
-                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path))
+                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path, cores, machine_type))
                     db.session.commit()
                     return {'status': True, 'data': 'Insert Successfully', 'error': ''}, 200
                 except Exception as e:
@@ -126,30 +140,32 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
     project_name = 'PB' if project_name == 'PROBIO' else project_name
 
     project_nfs_path = nfs_path +'INBOX/'
-
+    sample_pattern = ''
     if(search_pattern):
         sample_pattern = project_name+'-*'+search_pattern
         file_info_arr = get_file_list(project_nfs_path, sample_pattern, True)
     else:
-        search_pattern = file_name
+        # search_pattern = file_name
         file_lst_arr = sample_arr.split(',')
         file_info_arr = []
 
         for f in file_lst_arr:
+            sample_id = f.split('-')[2]
             proj_nfs_path = os.path.join(project_nfs_path, f)
             if(os.path.isdir(proj_nfs_path)):
                 file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
-                file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*')])
+                file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
         
     if(file_info_arr):
         validate_cfdna_file_size(file_info_arr)
 
         #curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
-
+       
         curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
+        
         try:
             # Create target Directory
             os.mkdir(barcode_dir)
@@ -330,10 +346,12 @@ def view_log_analysis_info(job_id):
         res = db.session.execute("SELECT log_path from jobs_t WHERE job_id ='{}' limit 1".format(job_id))
         row = generate_list_to_dict(res)
         log_path = row[0]['log_path']
-        f=open(log_path, "r")
-        contents =f.read()
-        f.close()
-        return {'status': True, 'data': contents, 'error': ''}, 200
-
+        if(os.path.isfile(log_path)):
+            f=open(log_path, "r")
+            contents =f.read()
+            f.close()
+            return {'status': True, 'data': contents, 'error': ''}, 200
+        else:
+            return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
