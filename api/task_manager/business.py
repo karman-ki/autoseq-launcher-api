@@ -120,7 +120,7 @@ def insert_project_config(barcode_id, config_path):
                 machine_type = ''
                 cores = 8
                 try:
-                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', '{}', '{}', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, config_path, cores, machine_type))
+                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', '{}', '{}', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, json_path, cores, machine_type))
                     db.session.commit()
                 except Exception as e:
                     return {'status': True, 'data': [], 'error': str(e)}, 200
@@ -302,11 +302,12 @@ def start_pipeline(project_id):
 
             ssh_client.close()
         else: 
-            result = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+            ssh_cmd = cmd
+            result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()
-        db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, log_path))
+        db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path))
         db.session.commit()
         
         return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
