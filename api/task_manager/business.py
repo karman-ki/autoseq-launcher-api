@@ -41,7 +41,6 @@ def validate_cfdna_file_size(file_arr):
                 prev_cfdna = cfdna_dict[sample_id]
             cfdna_dict[sample_id] = f[1]+','+prev_cfdna
 
-    print(cfdna_dict)
     # cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
     for cf in cfdna_dict:
         cfdna_arr = cfdna_dict[cf].rstrip(',').split(',')
@@ -87,7 +86,7 @@ def get_file_list(proj_nfs_path, sample_pattern, cfdna_boolean):
             else:
                 file_lst_arr.append(f)
         else:
-            if(not cfdna_boolean and not '_orig' in f):
+            if(not cfdna_boolean and not '_orig' in f and sample_pattern == ''):
                 file_lst_arr.append(f)
 
     return file_lst_arr
@@ -160,11 +159,9 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
                 file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
         
     if(file_info_arr):
-        print(file_info_arr)
+
         validate_cfdna_file_size(file_info_arr)
 
-        curr_file_arr = [x[2] for i, x in enumerate(file_info_arr)]
-       
         curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
 
         current_date = datetime.today().strftime("%Y-%m-%d")
@@ -176,7 +173,6 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
             print("Directory " , barcode_dir,  " Created ")
         except FileExistsError:
             print("Directory " , barcode_dir,  " already exists")
-
         
         barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
         generate_barcode_files(barcode_filename, curr_file_arr)

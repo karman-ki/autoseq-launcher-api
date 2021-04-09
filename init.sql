@@ -41,6 +41,7 @@ CREATE TABLE projects_t
      project_id  SERIAL REFERENCES projects_t (p_id),
      cores   VARCHAR(100),
      machine_type   VARCHAR(100),
+     pipeline_cmd TEXT,
      log_path TEXT,
      job_status         job_status,
      create_time TIMESTAMP,
