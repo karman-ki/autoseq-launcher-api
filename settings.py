@@ -17,12 +17,14 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/'
 MOUNT_POINT_PSFF = '/nfs/PSFF/'
 
-#MOUNT_POINT_PROBIO = '/home/karman/data/PROBIO/'
-#MOUNT_POINT_PSFF = '/home/karman/data/PSFF/'
+# MOUNT_POINT_PROBIO = '/home/karman/data/PROBIO/'
+# MOUNT_POINT_PSFF = '/home/karman/data/PSFF/'
 
 MOUNT_REF_GENOME_PATH = '/nfs/PROBIO/autoseq-genome/autoseq-genome.json'
 MOUNT_LIB_PATH = '/nfs/PROBIO/INBOX'
 MOUNT_SCRATCH_PATH = '/scratch/tmp/liqbio-tmp/'
+
+LIQBIO_PROD = '. /nfs/PROBIO/liqbio-dotfiles/.bash_profile'
 
 ANCHORAGE_ADDR = "anchorage.meb.ki.se"
 ANCHORAGE_USERNAME = "prosp"

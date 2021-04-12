@@ -45,7 +45,7 @@ def validate_cfdna_file_size(file_arr):
     group_cfdna = []
     for cf in cfdna_dict:
         cfdna_arr = cfdna_dict[cf].rstrip(',').split(',')
-        
+
         if(len(cfdna_arr) >= 2):
             symb_source_dir = cfdna_arr[1]
             source_dir = cfdna_arr[0]
@@ -104,7 +104,9 @@ def generate_autoseq_config(barcode_filename, config_path):
         os.makedirs(config_path)
     try:
         cmd = 'autoseq liqbio-prepare --outdir {} {}'.format(config_path, barcode_filename)
-        #ssh_cmd = 'source /home/prosp/develop/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+        liqbio_prod = current_app.config['LIQBIO_PROD']
+        ssh_cmd = '{}; {}'.format(liqbio_prod, cmd)
+        print(ssh_cmd)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,  shell=True)
         out, err = p.communicate()
         return out, err
@@ -384,9 +386,11 @@ def start_pipeline(project_id):
         if(not isdir):
             os.makedirs(outdir)
         
+        liqbio_prod = current_app.config['LIQBIO_PROD']
+
         cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
 
-        #ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+        ssh_cmd = '{};{}'.format(liqbio_prod, cmd)
 
         if machine_type:
             machine_config = current_app.config[machine_type]
@@ -403,7 +407,7 @@ def start_pipeline(project_id):
             print("Successful connection", ip_address)
             ssh_client.invoke_shell()
             
-            ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
+            # ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
             
             command = {
                 1:ssh_cmd
@@ -418,7 +422,7 @@ def start_pipeline(project_id):
 
             ssh_client.close()
         else: 
-            ssh_cmd = cmd
+            # ssh_cmd = cmd
             result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))

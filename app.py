@@ -27,6 +27,8 @@ def configure_app(flask_app):
     flask_app.config['SCRATCH_PATH'] = settings.MOUNT_SCRATCH_PATH
     flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
     flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
+    
+    flask_app.config['LIQBIO_PROD'] = settings.LIQBIO_PROD
 
     flask_app.config['ANCHORAGE'] = {'address': settings.ANCHORAGE_ADDR, 'username': settings.ANCHORAGE_USERNAME, 'password': settings.ANCHORAGE_PWD}
     flask_app.config['SCALAR'] = {'address': settings.SCALAR_ADDR, 'username': settings.SCALAR_USERNAME, 'password': settings.SCALAR_PWD}
