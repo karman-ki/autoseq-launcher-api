@@ -42,14 +42,19 @@ def validate_cfdna_file_size(file_arr):
             cfdna_dict[sample_id] = f[1]+','+prev_cfdna
 
     # cfdna_group = [[[w,x] for w,x,y,z in g] for k,g in  groupby(file_arr,key=itemgetter(3))]
+    group_cfdna = []
     for cf in cfdna_dict:
         cfdna_arr = cfdna_dict[cf].rstrip(',').split(',')
+        
         if(len(cfdna_arr) >= 2):
             symb_source_dir = cfdna_arr[1]
             source_dir = cfdna_arr[0]
             target_dir = cfdna_arr[0] + '_orig'
 
             isdir = os.path.isdir(target_dir)
+
+            group_cfdna.append(source_dir)
+
             try:
                 os.mkdir(target_dir)
                 print("Directory " , target_dir,  " Created ")
@@ -66,6 +71,8 @@ def validate_cfdna_file_size(file_arr):
                 print("Directory is empty")
             else:
                 print("Directory is not empty")
+
+    return group_cfdna
 
 def generate_barcode_files(barcode_filename, files):
     with open(barcode_filename, 'w') as filehandle:
@@ -136,33 +143,98 @@ def check_db_connection():
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
-def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
+def upload_orderform(project_name, sample_arr, file_name):
+
+    search_pattern = ''
+    file_lst_arr = sample_arr.split(',')
+
+    file_info_arr = []
+
+    nfs_path = current_app.config[project_name]
+
+    project_nfs_path = nfs_path +'INBOX/'
+
+    for f in file_lst_arr:
+        sample_id = '-'.join(f.split('-')[1:3])
+        proj_nfs_path = os.path.join(project_nfs_path, f)
+        if(os.path.isdir(proj_nfs_path)):
+            file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
+            file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+
+    if(file_info_arr):
+        cfdna_val = validate_cfdna_file_size(file_info_arr)
+
+        curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
+
+        # curr_file_arr = get_file_list(project_nfs_path, search_pattern, False)
+
+        current_date = datetime.today().strftime("%Y-%m-%d")
+        barcode_dir = nfs_path+'sample_lists/'
+        
+        try:
+            # Create target Directory
+            os.mkdir(barcode_dir)
+            print("Directory " , barcode_dir,  " Created ")
+        except FileExistsError:
+            print("Directory " , barcode_dir,  " already exists")
+        
+        barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
+        generate_barcode_files(barcode_filename, curr_file_arr)
+        config_path = nfs_path+'config/'+current_date
+
+        try:
+            res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, search_pattern, barcode_path, config_path, bar_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, search_pattern, barcode_filename, config_path))
+            db.session.commit()
+            row = generate_list_to_dict(res)
+            generate_autoseq_config(barcode_filename, config_path)
+            row[0]['file_list'] = curr_file_arr
+
+            return {'status': True, 'data': row, 'error': ''}, 200
+        except Exception as e:
+            return {'status': False, 'data': [], 'error': str(e)}, 400
+    else:
+        return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
+
+
+def sample_generate_barcode(project_name, ssid, sid, germline):
+    file_lst_arr =[]
 
     nfs_path = current_app.config[project_name]
     project_name = 'PB' if project_name == 'PROBIO' else project_name
-
     project_nfs_path = nfs_path +'INBOX/'
-    sample_pattern = ''
-    if(search_pattern):
-        sample_pattern = project_name+'-*'+search_pattern
-        file_info_arr = get_file_list(project_nfs_path, sample_pattern, True)
-    else:
-        # search_pattern = file_name
-        file_lst_arr = sample_arr.split(',')
-        file_info_arr = []
 
-        for f in file_lst_arr:
-            sample_id = '-'.join(f.split('-')[1:3])
-            proj_nfs_path = os.path.join(project_nfs_path, f)
-            if(os.path.isdir(proj_nfs_path)):
-                file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
-                file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
-        
+
+    normal_pattern = project_name+'-'+ssid+'-N-'+germline+'-*'
+
+    file_lst_arr.append(normal_pattern)
+
+    sid = sid.split(',')
+    for s in sid:
+        if(s):
+            cfdna_val = project_name+'-'+ssid+'-CFDNA-'+s+'-*'
+            file_lst_arr.append(cfdna_val)
+
+    file_info_arr = []
+
+    search_pattern = ''
+
+    for f in os.listdir(project_nfs_path):
+        for s1 in file_lst_arr:
+            if fnmatch.fnmatch(f, s1):
+                proj_nfs_path = os.path.join(project_nfs_path, f)
+                if(os.path.isdir(proj_nfs_path)):
+                    sample_id = '-'.join(f.split('-')[1:3])
+                    # search_pattern = project_name+'-*'+f.split('-')[-1]
+                    file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
+                    file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+
     if(file_info_arr):
+        
+        cfdna_val = validate_cfdna_file_size(file_info_arr)
 
-        validate_cfdna_file_size(file_info_arr)
+        curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 
-        curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
+        # curr_file_arr = get_file_list(project_nfs_path, search_pattern, False)
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
@@ -189,6 +261,60 @@ def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
             return {'status': False, 'data': [], 'error': str(e)}, 400
     else:
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
+
+# def generate_barcodes(project_name, search_pattern, sample_arr, file_name):
+
+#     nfs_path = current_app.config[project_name]
+#     project_name = 'PB' if project_name == 'PROBIO' else project_name
+
+#     project_nfs_path = nfs_path +'INBOX/'
+#     sample_pattern = ''
+#     if(search_pattern):
+#         sample_pattern = project_name+'-*'+search_pattern
+#         file_info_arr = get_file_list(project_nfs_path, sample_pattern, True)
+#     else:
+#         # search_pattern = file_name
+#         file_lst_arr = sample_arr.split(',')
+#         file_info_arr = []
+
+#         for f in file_lst_arr:
+#             sample_id = '-'.join(f.split('-')[1:3])
+#             proj_nfs_path = os.path.join(project_nfs_path, f)
+#             if(os.path.isdir(proj_nfs_path)):
+#                 file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
+#                 file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+        
+#     if(file_info_arr):
+
+#         validate_cfdna_file_size(file_info_arr)
+
+#         curr_file_arr = get_file_list(project_nfs_path, sample_pattern, False)
+
+#         current_date = datetime.today().strftime("%Y-%m-%d")
+#         barcode_dir = nfs_path+'sample_lists/'
+        
+#         try:
+#             # Create target Directory
+#             os.mkdir(barcode_dir)
+#             print("Directory " , barcode_dir,  " Created ")
+#         except FileExistsError:
+#             print("Directory " , barcode_dir,  " already exists")
+        
+#         barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
+#         generate_barcode_files(barcode_filename, curr_file_arr)
+#         config_path = nfs_path+'config/'+current_date
+#         try:
+#             res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, search_pattern, barcode_path, config_path, bar_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, search_pattern, barcode_filename, config_path))
+#             db.session.commit()
+#             row = generate_list_to_dict(res)
+#             generate_autoseq_config(barcode_filename, config_path)
+#             row[0]['file_list'] = curr_file_arr
+
+#             return {'status': True, 'data': row, 'error': ''}, 200
+#         except Exception as e:
+#             return {'status': False, 'data': [], 'error': str(e)}, 400
+#     else:
+#         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
 def generate_config_file(barcode_id):
@@ -229,12 +355,6 @@ def get_job_list():
         return {'status': True, 'data': row, 'error': ''}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
-
-
-def save_orderform(data):
-    jsondata = json.loads(data)
-    return {'status': True, 'data': jsondata, 'error': ''}, 200
-
 
 def start_pipeline(project_id):
     res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))

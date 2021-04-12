@@ -68,11 +68,11 @@ class GetJobList(Resource):
         result, errorcode = get_job_list()
         return result, errorcode
 
-@ctm.route('/save/ordeform')
-@api.response(200, 'Update the sample information')
+@ctm.route('/upload_orderform')
+@api.response(200, 'Barcode generated successfully')
 @api.response(400, 'No data found')
-class LeaderboardSaveOrdeform(Resource):
-    @api.expect(save_file_arguments, validate=True)
+class LeaderboardUploadOrdeform(Resource):
+    @api.expect(upload_file_arguments, validate=True)
     def post(self):
         """
         Save the sample list in the sequence table
@@ -80,15 +80,18 @@ class LeaderboardSaveOrdeform(Resource):
 
         ```
         """
-        args = save_file_arguments.parse_args()
-        result, errorcode = save_orderform(args['data'])
+        args = upload_file_arguments.parse_args()
+        project_name = args['project_name']
+        sample_arr = args['sample_arr']
+        file_name = args['file_name']
+        result, errorcode = upload_orderform(project_name, sample_arr, file_name)
         return result, errorcode 
 
-@ctm.route('/generate_barcode')
-@api.response(200, 'Database connected successfully')
+@ctm.route('/sample_generate_barcode')
+@api.response(200, 'Barcode generated successfully')
 @api.response(400, 'Database connection failed')               
 class GenerateProjectBarcode(Resource):
-    @api.expect(generate_barcode_arguments, validate=True)       
+    @api.expect(processing_step_arguments, validate=True)       
     def post(self):
         """
         Generate the barcode file for sample list
@@ -96,13 +99,33 @@ class GenerateProjectBarcode(Resource):
 
         ```
         """
-        args = generate_barcode_arguments.parse_args()
+        args = processing_step_arguments.parse_args()
         project_name = args['project_name']
-        search_pattern = args['search_pattern']
-        sample_arr = args['sample_arr']
-        file_name = args['file_name']
-        result, errorcode = generate_barcodes(project_name, search_pattern, sample_arr, file_name)
+        ssid = args['ssid']
+        sid = args['sid']
+        germline = args['germline']
+        result, errorcode = sample_generate_barcode(project_name, ssid, sid, germline)
         return result, errorcode
+
+# @ctm.route('/generate_barcode')
+# @api.response(200, 'Barcode generated successfully')
+# @api.response(400, 'Database connection failed')               
+# class GenerateProjectBarcode(Resource):
+#     @api.expect(generate_barcode_arguments, validate=True)       
+#     def post(self):
+#         """
+#         Generate the barcode file for sample list
+#         ```
+
+#         ```
+#         """
+#         args = generate_barcode_arguments.parse_args()
+#         project_name = args['project_name']
+#         search_pattern = args['search_pattern']
+#         sample_arr = args['sample_arr']
+#         file_name = args['file_name']
+#         result, errorcode = generate_barcodes(project_name, search_pattern, sample_arr, file_name)
+#         return result, errorcode
 
 
 @ctm.route('/generate_config')
