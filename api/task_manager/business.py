@@ -16,7 +16,6 @@ import shutil
 from operator import itemgetter
 from itertools import groupby
 
-
 def generate_list_to_dict(result):
     d, row = {}, []
     for rowproxy in result:
@@ -202,18 +201,18 @@ def sample_generate_barcode(project_name, ssid, sid, germline):
     file_lst_arr =[]
 
     nfs_path = current_app.config[project_name]
-    project_name = 'PB' if project_name == 'PROBIO' else project_name
+    pro_name = 'PB' if project_name == 'PROBIO' else project_name
     project_nfs_path = nfs_path +'INBOX/'
 
 
-    normal_pattern = project_name+'-'+ssid+'-N-'+germline+'-*'
+    normal_pattern = pro_name+'-'+ssid+'-N-'+germline+'-*'
 
     file_lst_arr.append(normal_pattern)
 
     sid = sid.split(',')
     for s in sid:
         if(s):
-            cfdna_val = project_name+'-'+ssid+'-CFDNA-'+s+'-*'
+            cfdna_val = pro_name+'-'+ssid+'-CFDNA-'+s+'-*'
             file_lst_arr.append(cfdna_val)
 
     file_info_arr = []
@@ -369,7 +368,7 @@ def start_pipeline(project_id):
 
     ref_genome = current_app.config['REF_GENOME_PATH']
     scratch_path = current_app.config['SCRATCH_PATH']
-    libdir = current_app.config['LIB_PATH']
+    libdir = current_app.config[project_name] + 'INBOX/'
     outdir_root = current_app.config[project_name]+'autoseq-output'
     cores = row[0]['cores']
     machine_type = row[0]['machine_type'].upper()
@@ -381,6 +380,8 @@ def start_pipeline(project_id):
     jobdb = os.path.join(outdir, id)+'.jobdb.json'
     log_path = os.path.join(outdir,id)+'.nohup.log'
     isdir = os.path.isdir(outdir)
+    
+    #script_dir = '/home/prosp/develop/'+ project_name
 
     try:
         if(not isdir):
@@ -389,6 +390,8 @@ def start_pipeline(project_id):
         liqbio_prod = current_app.config['LIQBIO_PROD']
 
         cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, scratch_path, libdir, json_path, log_path)
+
+        #cmd = 'nohup autoseq --umi --ref {} --outdir {} --jobdb {} --cores {} --script-dir {} --runner_name slurmrunner --scratch {} --libdir {} liqbio {} >> {} &'.format(ref_genome, outdir, jobdb, cores, script_dir, scratch_path, libdir, json_path, log_path)
 
         ssh_cmd = '{};{}'.format(liqbio_prod, cmd)
 
