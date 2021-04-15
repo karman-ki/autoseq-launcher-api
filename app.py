@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 import settings
 from api.restplus import api
-from api.task_manager.endpoints.cr_task_manager import ctm as task_manager_namespace
+from api.autoseq_launcher.endpoints.autoseq_launcher import ctm as autoseq_launcher_namespace
 
 from database import db
 
@@ -39,7 +39,7 @@ def initialize_app(flask_app):
     configure_app(flask_app)
     blueprint = Blueprint('api', __name__, url_prefix='/api')
     api.init_app(blueprint)
-    api.add_namespace(task_manager_namespace)
+    api.add_namespace(autoseq_launcher_namespace)
     flask_app.register_blueprint(blueprint)
     db.init_app(flask_app)
 

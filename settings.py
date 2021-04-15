@@ -10,8 +10,8 @@ RESTPLUS_MASK_SWAGGER = False
 RESTPLUS_ERROR_404_HELP = False
 
 # SQLAlchemy settings
-SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/curator_task_manager"
-SQLALCHEMY_BINDS = "" 
+SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL'] 
+# SQLALCHEMY_BINDS = os.environ['CURATION_DB_URL']
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/'

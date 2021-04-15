@@ -1,9 +1,9 @@
 import logging
 from flask_restplus import Resource
 from api.restplus import api
-from api.task_manager.business import *
-# from api.task_manager.serializers import *
-from api.task_manager.parsers import *
+from api.autoseq_launcher.business import *
+# from api.autoseq_launcher.serializers import *
+from api.autoseq_launcher.parsers import *
 from flask import request
 
 
@@ -129,7 +129,7 @@ class GenerateProjectBarcode(Resource):
 
 
 @ctm.route('/generate_config')
-@api.response(200, 'Database connected successfully')
+@api.response(200, 'Generate Config successfully')
 @api.response(400, 'Database connection failed')               
 class GenerateProjectConfig(Resource):
     @api.expect(generate_config_arguments, validate=True)       
@@ -146,7 +146,7 @@ class GenerateProjectConfig(Resource):
         return result, errorcode
 
 @ctm.route('/start_pipline')
-@api.response(200, 'Database connected successfully')
+@api.response(200, 'Pipeline started successfully')
 @api.response(400, 'Database connection failed')               
 class GenerateStartPipeline(Resource):
     @api.expect(start_pipeline_arguments, validate=True)       
@@ -163,13 +163,13 @@ class GenerateStartPipeline(Resource):
         return result, errorcode
 
 @ctm.route('/view_analysis_info')
-@api.response(200, 'Update the sample information')
+@api.response(200, 'Get the analysis information')
 @api.response(400, 'No data found')
 class ViewAnalysisInfo(Resource):
     @api.expect(start_pipeline_arguments, validate=True)       
     def post(self):
         """
-        Save the sample list in the sequence table
+        Fetch all analysis information
         ```
 
         ```
@@ -180,13 +180,13 @@ class ViewAnalysisInfo(Resource):
         return result, errorcode 
 
 @ctm.route('/edit_analysis_info')
-@api.response(200, 'Update the sample information')
+@api.response(200, 'Edit the analysis information')
 @api.response(400, 'No data found')
 class EditAnalysisInfo(Resource):
     @api.expect(start_pipeline_arguments, validate=True)       
     def post(self):
         """
-        Save the sample list in the sequence table
+        Edit the cores and machine type in the analysis
         ```
 
         ```
@@ -197,13 +197,13 @@ class EditAnalysisInfo(Resource):
         return result, errorcode 
 
 @ctm.route('/update_analysis_info')
-@api.response(200, 'Update the sample information')
+@api.response(200, 'Update the analysis information')
 @api.response(400, 'No data found')
 class UpdateAnalysisInfo(Resource):
     @api.expect(update_pipeline_arguments, validate=True)       
     def post(self):
         """
-        Save the sample list in the sequence table
+        Save the analysis info in the projects table
         ```
 
         ```
@@ -215,10 +215,28 @@ class UpdateAnalysisInfo(Resource):
         result, errorcode = update_analysis_info(project_id, cores, machine_type)
         return result, errorcode
 
-@ctm.route('/get_pipeline_log')
-@api.response(200, 'Update the sample information')
+@ctm.route('/view_pipeline_log')
+@api.response(200, 'Get the pipeline log information')
 @api.response(400, 'No data found')
 class ViewAnalysisLogInfo(Resource):
+    @api.expect(view_pipeline_log_arguments, validate=True)       
+    def post(self):
+        """
+        Get the pipeline log information
+        ```
+
+        ```
+        """
+        args = view_pipeline_log_arguments.parse_args()
+        job_id = args['job_id']
+        result, errorcode = view_log_analysis_info(job_id)
+        return result, errorcode 
+
+
+@ctm.route('/get_job_status')
+@api.response(200, 'Update the sample information')
+@api.response(400, 'No data found')
+class GetJobStatusInfo(Resource):
     @api.expect(view_pipeline_log_arguments, validate=True)       
     def post(self):
         """
@@ -229,5 +247,5 @@ class ViewAnalysisLogInfo(Resource):
         """
         args = view_pipeline_log_arguments.parse_args()
         job_id = args['job_id']
-        result, errorcode = view_log_analysis_info(job_id)
+        result, errorcode = get_job_status_info(job_id)
         return result, errorcode  

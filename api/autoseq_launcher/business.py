@@ -430,7 +430,7 @@ def start_pipeline(project_id):
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()
-        db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path))
+        db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, json_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path, jobdb))
         db.session.commit()
         
         return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
@@ -478,6 +478,22 @@ def view_log_analysis_info(job_id):
             contents =f.read()
             f.close()
             return {'status': True, 'data': contents, 'error': ''}, 200
+        else:
+            return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400
+
+
+def get_job_status_info(job_id):
+    try:
+        res = db.session.execute("SELECT json_path from jobs_t WHERE job_id ='{}' limit 1".format(job_id))
+        row = generate_list_to_dict(res)
+        json_path = row[0]['json_path']
+        if(os.path.isfile(json_path)):
+            with open(json_path) as json_file:
+                json_data = json.load(json_file)
+            
+            return {'status': True, 'data': json_data, 'error': ''}, 200
         else:
             return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
     except Exception as e:

@@ -1,6 +1,6 @@
 CREATE USER referral_writer WITH ENCRYPTED PASSWORD 'ProbioWriter';
-CREATE DATABASE curator_task_manager;
-GRANT ALL PRIVILEGES ON DATABASE curator_task_manager TO referral_writer;
+CREATE DATABASE autoseq_launcher;
+GRANT ALL PRIVILEGES ON DATABASE autoseq_launcher TO referral_writer;
 
 CREATE TYPE project_status AS ENUM ('0','1', '2', '-1');
 CREATE TYPE job_status AS ENUM ('0','1', '2', '-1');
@@ -43,6 +43,7 @@ CREATE TABLE projects_t
      machine_type   VARCHAR(100),
      pipeline_cmd TEXT,
      log_path TEXT,
+     json_path TEXT,
      job_status         job_status,
      create_time TIMESTAMP,
      update_time TIMESTAMP

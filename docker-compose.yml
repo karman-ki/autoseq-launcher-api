@@ -3,13 +3,13 @@ version: "3.3"
 services: 
   api:
     image: flask-restplus
-    container_name: curator_task_manager_api
+    container_name: curator_autoseq_launcherer_api
     build: .
     network_mode: host
     ports: 
       - 8100:8100
     volumes:
-      - /nfs:/nfs
+      - /home:/home
     environment:
       PORT: 8100
       FLASK_DEBUG: 1
