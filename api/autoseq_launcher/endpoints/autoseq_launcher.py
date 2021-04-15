@@ -249,3 +249,20 @@ class GetJobStatusInfo(Resource):
         job_id = args['job_id']
         result, errorcode = get_job_status_info(job_id)
         return result, errorcode  
+
+@ctm.route('/get_out_log_info')
+@api.response(200, 'View out log information')
+@api.response(400, 'No data found')
+class GetOutLogInfo(Resource):
+    @api.expect(view_out_log_arguments, validate=True)       
+    def post(self):
+        """
+        Save the sample list in the sequence table
+        ```
+
+        ```
+        """
+        args = view_out_log_arguments.parse_args()
+        out_log_path = args['out_path']
+        result, errorcode = get_out_log_info(out_log_path)
+        return result, errorcode  

@@ -498,3 +498,15 @@ def get_job_status_info(job_id):
             return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
+
+def get_out_log_info(out_path):
+    try:
+        if(os.path.isfile(out_path)):
+            f=open(out_path, "r")
+            contents =f.read()
+            f.close()
+            return {'status': True, 'data': contents, 'error': ''}, 200
+        else:
+            return {'status': True, 'data': [], 'error': 'Out log file not found'}, 200
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400

@@ -33,3 +33,6 @@ update_pipeline_arguments.add_argument('machine_type', type=str, required=True)
 
 view_pipeline_log_arguments = reqparse.RequestParser()
 view_pipeline_log_arguments.add_argument('job_id', type=str, required=True)
+
+view_out_log_arguments = reqparse.RequestParser()
+view_out_log_arguments.add_argument('out_path', type=str, required=True)
