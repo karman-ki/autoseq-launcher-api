@@ -101,10 +101,11 @@ class GenerateProjectBarcode(Resource):
         """
         args = processing_step_arguments.parse_args()
         project_name = args['project_name']
-        ssid = args['ssid']
+        sdid = args['sdid']
         sid = args['sid']
-        germline = args['germline']
-        result, errorcode = sample_generate_barcode(project_name, ssid, sid, germline)
+        germline_sid = args['germline_sid']
+        germline_sdid = args['germline_sdid']
+        result, errorcode = sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid)
         return result, errorcode
 
 # @ctm.route('/generate_barcode')
@@ -160,6 +161,23 @@ class GenerateStartPipeline(Resource):
         args = start_pipeline_arguments.parse_args()
         project_id = args['project_id']
         result, errorcode = start_pipeline(project_id)
+        return result, errorcode
+
+@ctm.route('/stop_pipline')
+@api.response(200, 'Pipeline stop successfully')
+@api.response(400, 'Database connection failed')               
+class GenerateStartPipeline(Resource):
+    @api.expect(stop_pipeline_arguments, validate=True)       
+    def post(self):
+        """
+        Stop the pipeline
+        ```
+
+        ```
+        """
+        args = stop_pipeline_arguments.parse_args()
+        project_id = args['project_id']
+        result, errorcode = stop_pipeline(project_id)
         return result, errorcode
 
 @ctm.route('/view_analysis_info')

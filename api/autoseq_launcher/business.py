@@ -197,7 +197,7 @@ def upload_orderform(project_name, sample_arr, file_name):
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
-def sample_generate_barcode(project_name, ssid, sid, germline):
+def sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid):
     file_lst_arr =[]
 
     nfs_path = current_app.config[project_name]
@@ -205,14 +205,14 @@ def sample_generate_barcode(project_name, ssid, sid, germline):
     project_nfs_path = nfs_path +'INBOX/'
 
 
-    normal_pattern = pro_name+'-'+ssid+'-N-'+germline+'-*'
+    normal_pattern = pro_name+'-'+germline_sdid+'-N-'+germline_sid+'-*'
 
     file_lst_arr.append(normal_pattern)
 
     sid = sid.split(',')
     for s in sid:
         if(s):
-            cfdna_val = pro_name+'-'+ssid+'-CFDNA-'+s+'-*'
+            cfdna_val = pro_name+'-'+sdid+'-CFDNA-'+s+'-*'
             file_lst_arr.append(cfdna_val)
 
     file_info_arr = []
@@ -435,6 +435,15 @@ def start_pipeline(project_id):
         
         return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
         
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400
+
+def stop_pipeline(project_id):
+    try:
+        db.session.execute("UPDATE projects_t SET pro_status='0' WHERE p_id='{}'" .format(project_id))
+        db.session.commit()
+        return {'status': True, 'data': 'Pipeline stopped successfully', 'error': ''}, 200
+
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
