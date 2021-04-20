@@ -146,7 +146,6 @@ def check_db_connection():
 
 def upload_orderform(project_name, sample_arr, file_name):
 
-    search_pattern = ''
     file_lst_arr = sample_arr.split(',')
 
     file_info_arr = []
@@ -167,8 +166,6 @@ def upload_orderform(project_name, sample_arr, file_name):
 
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 
-        # curr_file_arr = get_file_list(project_nfs_path, search_pattern, False)
-
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
         
@@ -184,7 +181,7 @@ def upload_orderform(project_name, sample_arr, file_name):
         config_path = nfs_path+'config/'+current_date
 
         try:
-            res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, search_pattern, barcode_path, config_path, bar_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, search_pattern, barcode_filename, config_path))
+            res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
             db.session.commit()
             row = generate_list_to_dict(res)
             generate_autoseq_config(barcode_filename, config_path)
@@ -197,27 +194,15 @@ def upload_orderform(project_name, sample_arr, file_name):
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
-def sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid):
-    file_lst_arr =[]
+def sample_generate_barcode(project_name,file_lst_arr):
+
+    file_lst_arr = file_lst_arr.replace('PROBIO', 'PB').split(',')
 
     nfs_path = current_app.config[project_name]
     pro_name = 'PB' if project_name == 'PROBIO' else project_name
     project_nfs_path = nfs_path +'INBOX/'
 
-
-    normal_pattern = pro_name+'-'+germline_sdid+'-N-'+germline_sid+'-*'
-
-    file_lst_arr.append(normal_pattern)
-
-    sid = sid.split(',')
-    for s in sid:
-        if(s):
-            cfdna_val = pro_name+'-'+sdid+'-CFDNA-'+s+'-*'
-            file_lst_arr.append(cfdna_val)
-
     file_info_arr = []
-
-    search_pattern = ''
 
     for f in os.listdir(project_nfs_path):
         for s1 in file_lst_arr:
@@ -225,7 +210,6 @@ def sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid
                 proj_nfs_path = os.path.join(project_nfs_path, f)
                 if(os.path.isdir(proj_nfs_path)):
                     sample_id = '-'.join(f.split('-')[1:3])
-                    # search_pattern = project_name+'-*'+f.split('-')[-1]
                     file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
                     file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
 
@@ -233,9 +217,9 @@ def sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid
         
         cfdna_val = validate_cfdna_file_size(file_info_arr)
 
-        curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
+        print(file_info_arr, cfdna_val)
 
-        # curr_file_arr = get_file_list(project_nfs_path, search_pattern, False)
+        curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
@@ -251,7 +235,7 @@ def sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid
         generate_barcode_files(barcode_filename, curr_file_arr)
         config_path = nfs_path+'config/'+current_date
         try:
-            res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, search_pattern, barcode_path, config_path, bar_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, search_pattern, barcode_filename, config_path))
+            res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '1', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
             db.session.commit()
             row = generate_list_to_dict(res)
             generate_autoseq_config(barcode_filename, config_path)

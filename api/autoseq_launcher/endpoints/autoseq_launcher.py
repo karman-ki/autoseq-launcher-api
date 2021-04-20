@@ -101,11 +101,12 @@ class GenerateProjectBarcode(Resource):
         """
         args = processing_step_arguments.parse_args()
         project_name = args['project_name']
-        sdid = args['sdid']
-        sid = args['sid']
-        germline_sid = args['germline_sid']
-        germline_sdid = args['germline_sdid']
-        result, errorcode = sample_generate_barcode(project_name, sdid, sid, germline_sid, germline_sdid)
+        samples = args['samples']
+        # sdid = args['sdid']
+        # sid = args['sid']
+        # germline_sid = args['germline_sid']
+        # germline_sdid = args['germline_sdid']
+        result, errorcode = sample_generate_barcode(project_name, samples)
         return result, errorcode
 
 # @ctm.route('/generate_barcode')

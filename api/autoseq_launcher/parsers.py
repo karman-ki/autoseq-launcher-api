@@ -25,10 +25,11 @@ upload_file_arguments.add_argument('file_name',  type=str, required=True, help="
 processing_step_arguments = reqparse.RequestParser()
 processing_step_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
                               help="valid Project names: 'PROBIO', 'PSFF'")
-processing_step_arguments.add_argument('sdid', type=str, required=True,  help='example : P-0023456')
-processing_step_arguments.add_argument('sid',  type=str, required=True, help="example (CFDNA): 8098125'")
-processing_step_arguments.add_argument('germline_sid',  type=str, required=True, help="example (N) : 8098123'")
-processing_step_arguments.add_argument('germline_sdid',  type=str, required=True, help="example (N) : 8098123'")
+processing_step_arguments.add_argument('samples', type=str, required=True,  help='[] String')
+# processing_step_arguments.add_argument('sdid', type=str, required=True,  help='example : P-0023456')
+# processing_step_arguments.add_argument('sid',  type=str, required=True, help="example (CFDNA): 8098125'")
+# processing_step_arguments.add_argument('germline_sid',  type=str, required=True, help="example (N) : 8098123'")
+# processing_step_arguments.add_argument('germline_sdid',  type=str, required=True, help="example (N) : 8098123'")
 
 
 update_pipeline_arguments = reqparse.RequestParser()

@@ -4,16 +4,15 @@ GRANT ALL PRIVILEGES ON DATABASE autoseq_launcher TO referral_writer;
 
 CREATE TYPE project_status AS ENUM ('0','1', '2', '-1');
 CREATE TYPE job_status AS ENUM ('0','1', '2', '-1');
-CREATE TYPE barcode_status AS ENUM ('0','1');
+CREATE TYPE launch_step AS ENUM ('0','1');
 
 CREATE TABLE barcodes_t
   (
      b_id          SERIAL PRIMARY KEY,
      project_name  VARCHAR(100),
-     search_pattern   VARCHAR(100),
      barcode_path    TEXT,
      config_path    TEXT,
-     bar_status  barcode_status,
+     launch_step  launch_step,
      create_time TIMESTAMP,
      update_time TIMESTAMP
   ); 
