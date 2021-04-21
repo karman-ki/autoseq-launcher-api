@@ -177,8 +177,21 @@ def upload_orderform(project_name, sample_arr, file_name):
             print("Directory " , barcode_dir,  " already exists")
         
         barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
-        generate_barcode_files(barcode_filename, curr_file_arr)
         config_path = nfs_path+'config/'+current_date
+
+        if os.path.isfile(barcode_filename):
+            expand = 0
+            while True:
+                expand += 1
+                new_file_name = barcode_filename.split(".txt")[0] + "_"+ str(expand) + ".txt"
+                if os.path.isfile(new_file_name):
+                    continue
+                else:
+                    barcode_filename = new_file_name
+                    config_path = nfs_path+'config/'+current_date + "_"+ str(expand)
+                    break
+
+        generate_barcode_files(barcode_filename, curr_file_arr)
 
         try:
             res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
@@ -217,8 +230,6 @@ def sample_generate_barcode(project_name,file_lst_arr):
         
         cfdna_val = validate_cfdna_file_size(file_info_arr)
 
-        print(file_info_arr, cfdna_val)
-
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 
         current_date = datetime.today().strftime("%Y-%m-%d")
@@ -232,8 +243,22 @@ def sample_generate_barcode(project_name,file_lst_arr):
             print("Directory " , barcode_dir,  " already exists")
         
         barcode_filename = barcode_dir + 'clinseqBarcodes_'+current_date+'.txt'
-        generate_barcode_files(barcode_filename, curr_file_arr)
         config_path = nfs_path+'config/'+current_date
+
+        if os.path.isfile(barcode_filename):
+            expand = 0
+            while True:
+                expand += 1
+                new_file_name = barcode_filename.split(".txt")[0] + "_"+ str(expand) + ".txt"
+                if os.path.isfile(new_file_name):
+                    continue
+                else:
+                    barcode_filename = new_file_name
+                    config_path = nfs_path+'config/'+current_date + "_"+ str(expand)
+                    break
+
+        generate_barcode_files(barcode_filename, curr_file_arr)
+
         try:
             res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '1', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
             db.session.commit()
