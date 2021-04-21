@@ -127,7 +127,7 @@ def insert_project_config(barcode_id, config_path):
                 machine_type = ''
                 cores = 8
                 try:
-                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', '{}', '{}', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, json_path, cores, machine_type))
+                    db.session.execute("INSERT INTO projects_t(p_id, barcode_id, sample_id, cfdna, normal, tumor, config_path, pro_status, progress_bar, cores, machine_type, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}','0', '0', '{}', '{}', NOW(), NOW())".format(barcode_id, sample_id, cfdna, normal, tumor, json_path, cores, machine_type))
                     db.session.commit()
                 except Exception as e:
                     return {'status': True, 'data': [], 'error': str(e)}, 200
@@ -488,7 +488,7 @@ def get_job_status_info(job_id):
             
             return {'status': True, 'data': json_data, 'error': ''}, 200
         else:
-            return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
+            return {'status': True, 'data': [], 'error': 'Job flow file not found'}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 

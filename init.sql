@@ -27,6 +27,7 @@ CREATE TABLE projects_t
      tumor   TEXT,
      config_path TEXT,
      pro_status         project_status,
+     progress_bar INTEGER,
      cores   VARCHAR(100),
      machine_type   VARCHAR(100),
      create_time TIMESTAMP,
