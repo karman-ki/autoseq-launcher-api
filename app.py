@@ -51,7 +51,7 @@ CORS(app)
 @click.option('-p', '--port', type=int, default=8100)
 def main(port):
     initialize_app(app)
-    log.info('>>>>> Starting CTM development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
+    log.info('>>>>> Starting autoseq-launcher development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
     app.run(debug=settings.FLASK_DEBUG, port=port, host='0.0.0.0')
 
 if __name__ == "__main__":

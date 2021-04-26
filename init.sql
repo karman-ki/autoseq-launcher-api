@@ -20,13 +20,13 @@ CREATE TABLE barcodes_t
 CREATE TABLE projects_t
   (
      p_id          SERIAL PRIMARY KEY,
-     barcode_id  SERIAL REFERENCES barcodes_t (b_id),
+     barcode_id  SERIAL REFERENCES barcodes_t (b_id) ON DELETE CASCADE,
      sample_id   VARCHAR(100),
      cfdna   TEXT,
      normal   TEXT,
      tumor   TEXT,
      config_path TEXT,
-     pro_status         project_status,
+     pro_status  project_status,
      progress_bar INTEGER,
      cores   VARCHAR(100),
      machine_type   VARCHAR(100),
@@ -38,7 +38,7 @@ CREATE TABLE projects_t
   CREATE TABLE jobs_t
   (
      job_id          SERIAL PRIMARY KEY,
-     project_id  SERIAL REFERENCES projects_t (p_id),
+     project_id  SERIAL REFERENCES projects_t (p_id) ON DELETE CASCADE,
      cores   VARCHAR(100),
      machine_type   VARCHAR(100),
      pipeline_cmd TEXT,

@@ -7,8 +7,8 @@ from sqlalchemy.orm.exc import NoResultFound
 
 log = logging.getLogger(__name__)
 
-api = Api(version='0.1', title='Curation Task Manager',
-          description='Create and monitoring project jobs')
+api = Api(version='0.1', title='Autoseq-Launcher (Curator)',
+          description='Creating and Monitoring the autoseq pipeline jobs')
 
 
 @api.errorhandler

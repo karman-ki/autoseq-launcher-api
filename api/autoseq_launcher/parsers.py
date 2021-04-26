@@ -10,8 +10,8 @@ generate_barcode_arguments.add_argument('file_name',  type=str, required=True, h
 generate_config_arguments = reqparse.RequestParser()
 generate_config_arguments.add_argument('barcode_id', type=str, required=True)
 
-start_pipeline_arguments = reqparse.RequestParser()
-start_pipeline_arguments.add_argument('project_id', type=str, required=True)
+get_pipeline_arguments = reqparse.RequestParser()
+get_pipeline_arguments.add_argument('project_id', type=str, required=True)
 
 stop_pipeline_arguments = reqparse.RequestParser()
 stop_pipeline_arguments.add_argument('project_id', type=str, required=True)
@@ -26,19 +26,14 @@ processing_step_arguments = reqparse.RequestParser()
 processing_step_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
                               help="valid Project names: 'PROBIO', 'PSFF'")
 processing_step_arguments.add_argument('samples', type=str, required=True,  help='[] String')
-# processing_step_arguments.add_argument('sdid', type=str, required=True,  help='example : P-0023456')
-# processing_step_arguments.add_argument('sid',  type=str, required=True, help="example (CFDNA): 8098125'")
-# processing_step_arguments.add_argument('germline_sid',  type=str, required=True, help="example (N) : 8098123'")
-# processing_step_arguments.add_argument('germline_sdid',  type=str, required=True, help="example (N) : 8098123'")
-
 
 update_pipeline_arguments = reqparse.RequestParser()
 update_pipeline_arguments.add_argument('project_id', type=str, required=True)
 update_pipeline_arguments.add_argument('cores', type=str, required=True)
 update_pipeline_arguments.add_argument('machine_type', type=str, required=True)
 
-view_pipeline_log_arguments = reqparse.RequestParser()
-view_pipeline_log_arguments.add_argument('job_id', type=str, required=True)
+get_job_id_arguments = reqparse.RequestParser()
+get_job_id_arguments.add_argument('job_id', type=str, required=True)
 
 view_out_log_arguments = reqparse.RequestParser()
 view_out_log_arguments.add_argument('out_path', type=str, required=True)

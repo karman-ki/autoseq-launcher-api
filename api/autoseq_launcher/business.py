@@ -350,6 +350,14 @@ def get_barcode_list():
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
+def del_barcode_info(barcode_id):
+    try:
+        res = db.session.execute("DELETE FROM  barcodes_t WHERE b_id ='{}'".format(barcode_id))
+        db.session.commit()
+        return {'status': True, 'data': 'Barcode information deleted successfully', 'error': ''}, 200
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400
+
 def get_project_list():
     try:
         res = db.session.execute("SELECT b.project_name, p.* from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id order by p.p_id desc")
@@ -476,6 +484,13 @@ def view_analysis_info(project_id):
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
+def del_analysis_info(project_id):
+    try:
+        res = db.session.execute("DELETE FROM  projects_t WHERE p_id ='{}'".format(project_id))
+        db.session.commit()
+        return {'status': True, 'data': 'Sample information deleted successfully', 'error': ''}, 200
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def update_analysis_info(project_id, cores, machine_type):
     try:
@@ -514,6 +529,14 @@ def get_job_status_info(job_id):
             return {'status': True, 'data': json_data, 'error': ''}, 200
         else:
             return {'status': True, 'data': [], 'error': 'Job flow file not found'}, 200
+    except Exception as e:
+        return {'status': False, 'data': [], 'error': str(e)}, 400
+
+def del_job_info(job_id):
+    try:
+        res = db.session.execute("DELETE FROM  jobs_t WHERE job_id ='{}'".format(job_id))
+        db.session.commit()
+        return {'status': True, 'data': 'Job information deleted successfully', 'error': ''}, 200
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 

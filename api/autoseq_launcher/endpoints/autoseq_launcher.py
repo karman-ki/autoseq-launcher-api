@@ -39,6 +39,23 @@ class GetBarcodeList(Resource):
         result, errorcode = get_barcode_list()
         return result, errorcode
 
+@ctm.route('/del_barcode_info')
+@api.response(200, 'Delete the barcode information')
+@api.response(400, 'No data found')
+class DeleteBarcodeInfo(Resource):
+    @api.expect(generate_config_arguments, validate=True)       
+    def post(self):
+        """
+        Delete the particular barcode information
+        ```
+
+        ```
+        """
+        args = generate_config_arguments.parse_args()
+        barcode_id = args['barcode_id']
+        result, errorcode = del_barcode_info(barcode_id)
+        return result, errorcode 
+
 
 @ctm.route('/project_list')
 @api.response(200, 'Database connected successfully')
@@ -102,10 +119,6 @@ class GenerateProjectBarcode(Resource):
         args = processing_step_arguments.parse_args()
         project_name = args['project_name']
         samples = args['samples']
-        # sdid = args['sdid']
-        # sid = args['sid']
-        # germline_sid = args['germline_sid']
-        # germline_sdid = args['germline_sdid']
         result, errorcode = sample_generate_barcode(project_name, samples)
         return result, errorcode
 
@@ -151,7 +164,7 @@ class GenerateProjectConfig(Resource):
 @api.response(200, 'Pipeline started successfully')
 @api.response(400, 'Database connection failed')               
 class GenerateStartPipeline(Resource):
-    @api.expect(start_pipeline_arguments, validate=True)       
+    @api.expect(get_pipeline_arguments, validate=True)       
     def post(self):
         """
         Generate the pipeline
@@ -159,7 +172,7 @@ class GenerateStartPipeline(Resource):
 
         ```
         """
-        args = start_pipeline_arguments.parse_args()
+        args = get_pipeline_arguments.parse_args()
         project_id = args['project_id']
         result, errorcode = start_pipeline(project_id)
         return result, errorcode
@@ -185,7 +198,7 @@ class GenerateStartPipeline(Resource):
 @api.response(200, 'Get the analysis information')
 @api.response(400, 'No data found')
 class ViewAnalysisInfo(Resource):
-    @api.expect(start_pipeline_arguments, validate=True)       
+    @api.expect(get_pipeline_arguments, validate=True)       
     def post(self):
         """
         Fetch all analysis information
@@ -193,16 +206,33 @@ class ViewAnalysisInfo(Resource):
 
         ```
         """
-        args = start_pipeline_arguments.parse_args()
+        args = get_pipeline_arguments.parse_args()
         project_id = args['project_id']
         result, errorcode = view_analysis_info(project_id)
+        return result, errorcode
+
+@ctm.route('/del_analysis_info')
+@api.response(200, 'Delete the analysis information')
+@api.response(400, 'No data found')
+class DeleteAnalysisInfo(Resource):
+    @api.expect(get_pipeline_arguments, validate=True)       
+    def post(self):
+        """
+        Delete the particular analysis information
+        ```
+
+        ```
+        """
+        args = get_pipeline_arguments.parse_args()
+        project_id = args['project_id']
+        result, errorcode = del_analysis_info(project_id)
         return result, errorcode 
 
 @ctm.route('/edit_analysis_info')
 @api.response(200, 'Edit the analysis information')
 @api.response(400, 'No data found')
 class EditAnalysisInfo(Resource):
-    @api.expect(start_pipeline_arguments, validate=True)       
+    @api.expect(get_pipeline_arguments, validate=True)       
     def post(self):
         """
         Edit the cores and machine type in the analysis
@@ -210,7 +240,7 @@ class EditAnalysisInfo(Resource):
 
         ```
         """
-        args = start_pipeline_arguments.parse_args()
+        args = get_pipeline_arguments.parse_args()
         project_id = args['project_id']
         result, errorcode = edit_analysis_info(project_id)
         return result, errorcode 
@@ -238,7 +268,7 @@ class UpdateAnalysisInfo(Resource):
 @api.response(200, 'Get the pipeline log information')
 @api.response(400, 'No data found')
 class ViewAnalysisLogInfo(Resource):
-    @api.expect(view_pipeline_log_arguments, validate=True)       
+    @api.expect(get_job_id_arguments, validate=True)       
     def post(self):
         """
         Get the pipeline log information
@@ -246,7 +276,7 @@ class ViewAnalysisLogInfo(Resource):
 
         ```
         """
-        args = view_pipeline_log_arguments.parse_args()
+        args = get_job_id_arguments.parse_args()
         job_id = args['job_id']
         result, errorcode = view_log_analysis_info(job_id)
         return result, errorcode 
@@ -256,7 +286,7 @@ class ViewAnalysisLogInfo(Resource):
 @api.response(200, 'Update the sample information')
 @api.response(400, 'No data found')
 class GetJobStatusInfo(Resource):
-    @api.expect(view_pipeline_log_arguments, validate=True)       
+    @api.expect(get_job_id_arguments, validate=True)       
     def post(self):
         """
         Save the sample list in the sequence table
@@ -264,10 +294,29 @@ class GetJobStatusInfo(Resource):
 
         ```
         """
-        args = view_pipeline_log_arguments.parse_args()
+        args = get_job_id_arguments.parse_args()
         job_id = args['job_id']
         result, errorcode = get_job_status_info(job_id)
-        return result, errorcode  
+        return result, errorcode 
+
+
+@ctm.route('/del_job_info')
+@api.response(200, 'Delete the job information')
+@api.response(400, 'No data found')
+class DeleteJobInfo(Resource):
+    @api.expect(get_job_id_arguments, validate=True)       
+    def post(self):
+        """
+        Delete the particular job information
+        ```
+
+        ```
+        """
+        args = get_job_id_arguments.parse_args()
+        project_id = args['job_id']
+        result, errorcode = del_job_info(project_id)
+        return result, errorcode 
+
 
 @ctm.route('/get_out_log_info')
 @api.response(200, 'View out log information')
