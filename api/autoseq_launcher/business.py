@@ -162,6 +162,26 @@ def upload_orderform(project_name, sample_arr, file_name):
             file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
 
     if(file_info_arr):
+        file_validate = {}
+        for f1 in file_info_arr:
+            if(f1[3] == False):
+                if(f1[4] not in file_validate):
+                    file_validate[f1[4]] = f1[3]
+                else:
+                    del file_validate[f1[4]]
+            else:
+                file_validate[f1[4]] = f1[3]
+
+        for f in os.listdir(project_nfs_path):
+            sample_id = '-'.join(f.split('-')[1:3])
+            if sample_id in file_validate:
+                sample_pattern = '*-'+sample_id+'-N-*' if file_validate[sample_id] == True else '*-'+sample_id+'-CFDNA-*' 
+                if fnmatch.fnmatch(f, sample_pattern):
+                    proj_nfs_path = os.path.join(project_nfs_path, f)
+                    if(os.path.isdir(proj_nfs_path)):
+                        file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
+                        file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+
         cfdna_val = validate_cfdna_file_size(file_info_arr)
 
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
@@ -207,7 +227,7 @@ def upload_orderform(project_name, sample_arr, file_name):
         return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
-def sample_generate_barcode(project_name,file_lst_arr):
+def sample_generate_barcode(project_name, file_lst_arr):
 
     file_lst_arr = file_lst_arr.replace('PROBIO', 'PB').split(',')
 
