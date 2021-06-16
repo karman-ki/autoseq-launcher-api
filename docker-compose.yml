@@ -3,7 +3,7 @@ version: "3.3"
 services: 
   api:
     image: flask-restplus
-    container_name: curator_autoseq_launcherer_api
+    container_name: autoseq_launcher_api
     build: .
     network_mode: host
     ports: 
@@ -16,7 +16,7 @@ services:
 
   db:
     image: postgres
-    container_name: postgres
+    container_name: autoseq_launcher_postgres
     restart: always
     network_mode: host
     depends_on:
@@ -30,7 +30,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin
+    container_name: autoseq_launcher_pgadmin
     network_mode: host
     depends_on:
       - db

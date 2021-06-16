@@ -16,6 +16,27 @@ import shutil
 from operator import itemgetter
 from itertools import groupby
 
+
+def connectSSHServer(ip_address, password, username, command):
+    result = ''
+    try:
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname=ip_address,username=username, password=password)
+        print("Successful connection", ip_address)
+        ssh_client.invoke_shell()
+    
+        for key,value in command.items():
+            stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
+            outlines=stdout.readlines()
+            result=''.join(outlines)
+        ssh_client.close()
+
+    except Exception as e:
+        result = str(e)
+        
+    return result
+
 def generate_list_to_dict(result):
     d, row = {}, []
     for rowproxy in result:
@@ -102,13 +123,25 @@ def generate_autoseq_config(barcode_filename, config_path):
     if(not isdir):
         os.makedirs(config_path)
     try:
-        cmd = 'autoseq liqbio-prepare --outdir {} {}'.format(config_path, barcode_filename)
+        
+        ref_genome = current_app.config['REF_GENOME_PATH']
+        cmd = 'autoseq --ref {} liqbio-prepare --outdir {} {}'.format(ref_genome, config_path, barcode_filename)
+
         liqbio_prod = current_app.config['LIQBIO_PROD']
         ssh_cmd = '{}; {}'.format(liqbio_prod, cmd)
-        print(ssh_cmd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,  shell=True)
-        out, err = p.communicate()
-        return out, err
+
+        machine_config = current_app.config['ANCHORAGE']
+        ip_address = machine_config['address']
+        username = machine_config['username']
+        password = machine_config['password']
+
+        command = {
+            1:ssh_cmd
+        }
+
+        out = connectSSHServer(ip_address, password, username, command)
+
+        return out
     except Exception as e:
         return {'status': False, 'data': [], 'error': str(e)}, 400
 
@@ -432,38 +465,24 @@ def start_pipeline(project_id):
 
         ssh_cmd = '{};{}'.format(liqbio_prod, cmd)
 
-        if machine_type:
-            machine_config = current_app.config[machine_type]
-            ip_address = machine_config['address']
-            username = machine_config['username']
-            password = machine_config['password']
+        machine_type = machine_type if machine_type != '' else 'ANCHORAGE'
+        
+        # if machine_type:
+        machine_config = current_app.config[machine_type]
+        ip_address = machine_config['address']
+        username = machine_config['username']
+        password = machine_config['password']
 
-            print(ip_address, password, username)
+        command = {
+            1:ssh_cmd
+        }
 
-            ssh_client = paramiko.SSHClient()
-            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh_client.connect(hostname=ip_address,username=username, password=password)
+        print(ip_address, password, username, command)
 
-            print("Successful connection", ip_address)
-            ssh_client.invoke_shell()
-            
-            # ssh_cmd = 'source /nfs/PROBIO/liqbio-dotfiles/.bash_profile; {}'.format(cmd)
-            
-            command = {
-                1:ssh_cmd
-            }
-            
-            result = ''
-            for key,value in command.items():
-                stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=True)
-                outlines=stdout.readlines()
-                result=''.join(outlines)
-            
+        connectSSHServer(ip_address, password, username, command)
 
-            ssh_client.close()
-        else: 
-            # ssh_cmd = cmd
-            result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
+        # else: 
+        #     result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
 
         db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
         db.session.commit()

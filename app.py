@@ -31,7 +31,7 @@ def configure_app(flask_app):
     flask_app.config['LIQBIO_PROD'] = settings.LIQBIO_PROD
 
     flask_app.config['ANCHORAGE'] = {'address': settings.ANCHORAGE_ADDR, 'username': settings.ANCHORAGE_USERNAME, 'password': settings.ANCHORAGE_PWD}
-    flask_app.config['SCALAR'] = {'address': settings.SCALAR_ADDR, 'username': settings.SCALAR_USERNAME, 'password': settings.SCALAR_PWD}
+    flask_app.config['GRYFFINDOR'] = {'address': settings.GRYFFINDOR_ADDR, 'username': settings.GRYFFINDOR_USERNAME, 'password': settings.GRYFFINDOR_PWD}
     flask_app.config['VECTOR'] = {'address': settings.VECTOR_ADDR, 'username': settings.VECTOR_USERNAME, 'password': settings.VECTOR_PWD}
 
 

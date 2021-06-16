@@ -10,8 +10,7 @@ RESTPLUS_MASK_SWAGGER = False
 RESTPLUS_ERROR_404_HELP = False
 
 # SQLAlchemy settings
-SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL'] 
-# SQLALCHEMY_BINDS = os.environ['CURATION_DB_URL']
+SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://referral_writer:ProbioWriter@127.0.0.1:5432/autoseq_launcher"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/'
@@ -23,17 +22,16 @@ MOUNT_POINT_PSFF = '/nfs/PSFF/'
 MOUNT_REF_GENOME_PATH = '/nfs/PROBIO/autoseq-genome/autoseq-genome.json'
 MOUNT_LIB_PATH = '/nfs/PROBIO/INBOX'
 MOUNT_SCRATCH_PATH = '/scratch/tmp/liqbio-tmp/'
-
 LIQBIO_PROD = '. /nfs/PROBIO/liqbio-dotfiles/.bash_profile'
 
 ANCHORAGE_ADDR = "anchorage.meb.ki.se"
 ANCHORAGE_USERNAME = "prosp"
-ANCHORAGE_PWD = "16Vinter16"
+ANCHORAGE_PWD = "16Midsommar16"
 
-SCALAR_ADDR = "anchorage.meb.ki.se"
-SCALAR_USERNAME = "prosp"
-SCALAR_PWD = "16Vinter16"
+GRYFFINDOR_ADDR = "c8gryffindor01.meb.ki.se"
+GRYFFINDOR_USERNAME = "prosp"
+GRYFFINDOR_PWD = "16Midsommar16"
 
-VECTOR_ADDR = "anchorage.meb.ki.se"
+VECTOR_ADDR = "vector.meb.ki.se"
 VECTOR_USERNAME = "prosp"
-VECTOR_PWD = "16Vinter16"
+VECTOR_PWD = ""
