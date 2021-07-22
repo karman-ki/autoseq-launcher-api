@@ -16,8 +16,8 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/'
 MOUNT_POINT_PSFF = '/nfs/PSFF/'
 
-# MOUNT_POINT_PROBIO = '/home/karman/data/PROBIO/'
-# MOUNT_POINT_PSFF = '/home/karman/data/PSFF/'
+#MOUNT_POINT_PROBIO = '/home/karman/data/PROBIO/'
+#MOUNT_POINT_PSFF = '/home/karman/data/PSFF/'
 
 MOUNT_REF_GENOME_PATH = '/nfs/PROBIO/autoseq-genome/autoseq-genome.json'
 MOUNT_LIB_PATH = '/nfs/PROBIO/INBOX'

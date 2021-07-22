@@ -189,10 +189,11 @@ def upload_orderform(project_name, sample_arr, file_name):
 
     for f in file_lst_arr:
         sample_id = '-'.join(f.split('-')[1:3])
+        c3_id = ''.join(f.split('-')[-1])
         proj_nfs_path = os.path.join(project_nfs_path, f)
         if(os.path.isdir(proj_nfs_path)):
             file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
-            file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+            file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id, c3_id])
 
     if(file_info_arr):
         file_validate = {}
@@ -207,16 +208,16 @@ def upload_orderform(project_name, sample_arr, file_name):
 
         for f in os.listdir(project_nfs_path):
             sample_id = '-'.join(f.split('-')[1:3])
+            c3_id = ''.join(f.split('-')[-1])
             if sample_id in file_validate:
-                sample_pattern = '*-'+sample_id+'-N-*' if file_validate[sample_id] == True else '*-'+sample_id+'-CFDNA-*' 
+                sample_pattern = '*-'+sample_id+'-N-*'+c3_id if file_validate[sample_id] == True else '*-'+sample_id+'-CFDNA-*'+c3_id
                 if fnmatch.fnmatch(f, sample_pattern):
                     proj_nfs_path = os.path.join(project_nfs_path, f)
                     if(os.path.isdir(proj_nfs_path)):
                         file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
-                        file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id])
+                        file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id, c3_id])
 
         cfdna_val = validate_cfdna_file_size(file_info_arr)
-
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 
         current_date = datetime.today().strftime("%Y-%m-%d")
