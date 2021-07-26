@@ -9,7 +9,7 @@ services:
     ports: 
       - 8100:8100
     volumes:
-      - /home:/home
+      - /nfs:/nfs
     environment:
       PORT: 8100
       FLASK_DEBUG: 1
