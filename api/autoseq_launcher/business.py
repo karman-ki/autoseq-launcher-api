@@ -218,7 +218,9 @@ def upload_orderform(project_name, sample_arr, file_name):
                         file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id, c3_id])
 
         cfdna_val = validate_cfdna_file_size(file_info_arr)
+        
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
+        curr_file_arr = list(set(curr_file_arr))
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
@@ -285,6 +287,7 @@ def sample_generate_barcode(project_name, file_lst_arr):
         cfdna_val = validate_cfdna_file_size(file_info_arr)
 
         curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
+        curr_file_arr = list(set(curr_file_arr))
 
         current_date = datetime.today().strftime("%Y-%m-%d")
         barcode_dir = nfs_path+'sample_lists/'
