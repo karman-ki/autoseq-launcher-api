@@ -17,13 +17,14 @@ from operator import itemgetter
 from itertools import groupby
 
 
-def connectSSHServer(ip_address, password, username, command):
+def connectSSHServer(ip_address, pwd, user, command):
 	result = ''
 	try:
 		ssh_client = paramiko.SSHClient()
 		ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-		ssh_client.connect(hostname=ip_address,username=username, password=password)
-		print("Successful connection", ip_address)
+		ssh_client.connect(hostname=ip_address,username=user, password=pwd)
+		print("Successful connection", ip_address, user, pwd)
+		
 		try:
 
 			transport = ssh_client.get_transport()
@@ -152,7 +153,7 @@ def get_file_list(proj_nfs_path, sample_pattern, cfdna_boolean):
 
 	return file_lst_arr
 
-def generate_autoseq_config(barcode_filename, config_path):
+def generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd):
 	isdir = os.path.isdir(config_path)
 	if(not isdir):
 		os.makedirs(config_path)
@@ -166,12 +167,8 @@ def generate_autoseq_config(barcode_filename, config_path):
 
 		machine_config = current_app.config['ANCHORAGE']
 		ip_address = machine_config['address']
-		username = machine_config['username']
-		password = machine_config['password']
-
-		# command = {
-		# 	1:ssh_cmd
-		# }
+		username = anch_user
+		password = anch_pwd
 
 		out = connectSSHServer(ip_address, password, username, ssh_cmd)
 
@@ -287,7 +284,7 @@ def upload_orderform(project_name, sample_arr, file_name,  anch_user, anch_pwd):
 			res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
 			db.session.commit()
 			row = generate_list_to_dict(res)
-			generate_autoseq_config(barcode_filename, config_path)
+			generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
 			row[0]['file_list'] = curr_file_arr
 
 			return {'status': True, 'data': row, 'error': ''}, 200
@@ -354,7 +351,7 @@ def sample_generate_barcode(project_name, anch_user, anch_pwd, file_lst_arr):
 			res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '1', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
 			db.session.commit()
 			row = generate_list_to_dict(res)
-			generate_autoseq_config(barcode_filename, config_path)
+			generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
 			row[0]['file_list'] = curr_file_arr
 
 			return {'status': True, 'data': row, 'error': ''}, 200
@@ -511,17 +508,8 @@ def start_pipeline(project_id):
 		username = machine_config['username']
 		password = machine_config['password']
 
-		# command = {
-		# 	1:ssh_cmd
-		# }
-
-		# print(ip_address, password, username, ssh_cmd)
-
 		connectSSHServer(ip_address, password, username, ssh_cmd)
 
-		# else: 
-		#     result = subprocess.check_output(ssh_cmd, shell=True, universal_newlines=True)
-		
 		db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
 		db.session.commit()
 		db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, json_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path, jobdb))
