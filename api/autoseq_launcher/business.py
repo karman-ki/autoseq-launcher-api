@@ -285,7 +285,7 @@ def upload_orderform(project_name, sample_arr, file_name,  anch_user, anch_pwd):
 				row = generate_list_to_dict(res)
 				row[0]['file_list'] = curr_file_arr
 
-				return {'status': True, 'data': curr_file_arr, 'error': ''}, 200
+				return {'status': True, 'data': row, 'error': ''}, 200
 			except Exception as e:
 				return {'status': False, 'data': [], 'error': str(e)}, 400
 		else:
@@ -355,7 +355,7 @@ def sample_generate_barcode(project_name, anch_user, anch_pwd, file_lst_arr):
 				row = generate_list_to_dict(res)
 				row[0]['file_list'] = curr_file_arr
 
-				return {'status': True, 'data': curr_file_arr, 'error': ''}, 200
+				return {'status': True, 'data': row, 'error': ''}, 200
 			except Exception as e:
 				return {'status': False, 'data': [], 'error': str(e)}, 400
 		else:
