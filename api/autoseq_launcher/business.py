@@ -1,3 +1,4 @@
+from paramiko.ssh_exception import BadHostKeyException
 from database import db
 # from database.models import CTMBarcode as barcodes
 # from database.models import CTMProject as project
@@ -18,44 +19,41 @@ from itertools import groupby
 
 
 def connectSSHServer(ip_address, pwd, user, command):
-	result = ''
+	result = False
 	try:
 		ssh_client = paramiko.SSHClient()
 		ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-		ssh_client.connect(hostname=ip_address,username=user, password=pwd)
-		print("Successful connection", ip_address, user, pwd)
-		
-		try:
 
-			transport = ssh_client.get_transport()
-			chan = transport.open_session()
-			chan.exec_command(command)
+		print("Server Connecting...")
+		ssh_client.connect(hostname=ip_address,username=user, password=pwd, timeout=5)
 
-			key = True
+		transport = ssh_client.get_transport()
+		chan = transport.open_session()
+		chan.exec_command(command)
 
-			while key:
-				if chan.recv_ready():
-					result = chan.recv(4096).decode('ascii')
-				if chan.recv_stderr_ready():
-					result = chan.recv_stderr(4096).decode('ascii')
-				if chan.exit_status_ready():
-					result = chan.recv_exit_status()
-					key = False
-					ssh_client.close()
+		key = True
 
-			'''
-			for key,value in command.items():
-				stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=False)
-				stdout.channel.recv_exit_status()
-				outlines=stdout.readlines()
-				result=''.join(outlines)
-			'''
+		while key:
+			if chan.recv_ready():
+				result = chan.recv(4096).decode('ascii')
+			if chan.recv_stderr_ready():
+				result = chan.recv_stderr(4096).decode('ascii')
+			if chan.exit_status_ready():
+				result = chan.recv_exit_status()
+				key = False
+				result = True
+				ssh_client.close()
 
-		except Exception as e:
-			result = str(e)
-
+		'''
+		for key,value in command.items():
+			stdin,stdout,stderr=ssh_client.exec_command(value, get_pty=False)
+			stdout.channel.recv_exit_status()
+			outlines=stdout.readlines()
+			result=''.join(outlines)
+		'''
 	except Exception as e:
-		result = str(e)
+		print("Exception : {}",format(e))
+		result = False
 		
 	return result
 
@@ -121,11 +119,13 @@ def validate_cfdna_file_size(file_arr, anch_user, anch_pwd):
 				ssh_cmd = "ln -s {}/* {}".format(os.path.join(target_dir), os.path.join(symb_source_dir))
 				machine_config = current_app.config["ANCHORAGE"]
 				ip_address = machine_config['address']
-				username = anch_user
-				password = anch_pwd
-				connectSSHServer(ip_address, password, username, ssh_cmd)
+
+				out = connectSSHServer(ip_address, anch_pwd, anch_user, ssh_cmd)
+				if(not out):
+					return {'status': True, 'data': [], 'error': 'Server not connected'}, 200		
+
 			except Exception as e:
-				print(str(e))
+				print("Exception : {}".format(e))
 
 	return group_cfdna
 
@@ -167,11 +167,8 @@ def generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd):
 
 		machine_config = current_app.config['ANCHORAGE']
 		ip_address = machine_config['address']
-		username = anch_user
-		password = anch_pwd
 
-		out = connectSSHServer(ip_address, password, username, ssh_cmd)
-
+		out = connectSSHServer(ip_address, anch_pwd, anch_user, ssh_cmd)
 		return out
 	except Exception as e:
 		return {'status': False, 'data': [], 'error': str(e)}, 400
@@ -279,17 +276,20 @@ def upload_orderform(project_name, sample_arr, file_name,  anch_user, anch_pwd):
 					break
 
 		generate_barcode_files(barcode_filename, curr_file_arr)
+		conn_status = generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
 
-		try:
-			res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
-			db.session.commit()
-			row = generate_list_to_dict(res)
-			generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
-			row[0]['file_list'] = curr_file_arr
+		if(conn_status):
+			try:
+				res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '0', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
+				db.session.commit()
+				row = generate_list_to_dict(res)
+				row[0]['file_list'] = curr_file_arr
 
-			return {'status': True, 'data': row, 'error': ''}, 200
-		except Exception as e:
-			return {'status': False, 'data': [], 'error': str(e)}, 400
+				return {'status': True, 'data': curr_file_arr, 'error': ''}, 200
+			except Exception as e:
+				return {'status': False, 'data': [], 'error': str(e)}, 400
+		else:
+			return {'status': True, 'data': [], 'error': 'Server not connected'}, 200				
 	else:
 		return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
@@ -346,17 +346,20 @@ def sample_generate_barcode(project_name, anch_user, anch_pwd, file_lst_arr):
 					break
 
 		generate_barcode_files(barcode_filename, curr_file_arr)
+		conn_status = generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
 
-		try:
-			res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '1', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
-			db.session.commit()
-			row = generate_list_to_dict(res)
-			generate_autoseq_config(barcode_filename, config_path, anch_user, anch_pwd)
-			row[0]['file_list'] = curr_file_arr
+		if(conn_status):
+			try:
+				res = db.session.execute("INSERT INTO barcodes_t(b_id, project_name, barcode_path, config_path, launch_step, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '1', NOW(), NOW()) RETURNING *".format(project_name, barcode_filename, config_path))
+				db.session.commit()
+				row = generate_list_to_dict(res)
+				row[0]['file_list'] = curr_file_arr
 
-			return {'status': True, 'data': row, 'error': ''}, 200
-		except Exception as e:
-			return {'status': False, 'data': [], 'error': str(e)}, 400
+				return {'status': True, 'data': curr_file_arr, 'error': ''}, 200
+			except Exception as e:
+				return {'status': False, 'data': [], 'error': str(e)}, 400
+		else:
+			return {'status': True, 'data': [], 'error': 'Server Not Connected'}, 200
 	else:
 		return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
@@ -508,15 +511,18 @@ def start_pipeline(project_id):
 		username = machine_config['username']
 		password = machine_config['password']
 
-		connectSSHServer(ip_address, password, username, ssh_cmd)
+		out = connectSSHServer(ip_address, password, username, ssh_cmd)
 
-		db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
-		db.session.commit()
-		db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, json_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path, jobdb))
-		db.session.commit()
-		
-		return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
-		
+		if(out):
+			db.session.execute("UPDATE projects_t SET pro_status='1' WHERE p_id='{}'" .format(project_id))
+			db.session.commit()
+			db.session.execute("INSERT INTO jobs_t(job_id, project_id, cores, machine_type, pipeline_cmd, log_path, json_path, job_status, create_time, update_time) VALUES (DEFAULT, '{}', '{}', '{}', '{}', '{}', '{}', '0', NOW(), NOW())".format(project_id, cores, machine_type, ssh_cmd, log_path, jobdb))
+			db.session.commit()
+			
+			return {'status': True, 'data': 'Pipeline started successfully', 'error': ''}, 200
+		else:
+			return {'status': True, 'data': [], 'error': 'Server not connected'}, 200	
+
 	except Exception as e:
 		return {'status': False, 'data': [], 'error': str(e)}, 400
 
