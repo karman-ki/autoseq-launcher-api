@@ -1,0 +1,5 @@
+launcher:
+    host: localhost
+    user: referral_writer
+    password: ProbioWriter
+    database: autoseq_launcher

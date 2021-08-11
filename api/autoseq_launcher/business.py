@@ -98,8 +98,8 @@ def validate_cfdna_file_size(file_arr):
 			if not isdir:
 				src_fldr = os.path.join(source_dir)
 				dest_fldr = os.path.join(target_dir)
-				# shutil.move(src_fldr,dest_fldr)
-				os.rename(src_fldr,dest_fldr)
+				shutil.move(src_fldr,dest_fldr)
+				#os.rename(src_fldr,dest_fldr)
 				
 				if os.path.isdir(source_dir):
 					os.rmdir(source_dir)
@@ -108,12 +108,23 @@ def validate_cfdna_file_size(file_arr):
 					print("{} is already moved to {}".format(source_dir, target_dir))
 			else:
 				print('Already folder config {}', format(target_dir))
-
+			
+			'''
 			file_names = os.listdir(target_dir)
 			for file_name in file_names:
 				islink_filename = os.path.islink(os.path.join(symb_source_dir, file_name))
 				if not islink_filename:
-					os.symlink(os.path.join(target_dir, file_name), os.path.join(symb_source_dir, file_name))
+                                    os.symlink(os.path.join(target_dir, file_name), os.path.join(symb_source_dir, file_name))
+			'''
+			try:
+				ssh_cmd = "ln -s {}/* {}".format(os.path.join(target_dir), os.path.join(symb_source_dir))
+				print(ssh_cmd)
+				ip_address = "anchorage.meb.ki.se"
+				username = "venche"
+				password = "Rudraksh123"
+				connectSSHServer(ip_address, password, username, ssh_cmd)
+			except Exception as e:
+				print(str(e))
 
 	return group_cfdna
 

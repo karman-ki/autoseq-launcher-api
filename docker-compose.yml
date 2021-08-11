@@ -8,36 +8,9 @@ services:
     network_mode: host
     ports: 
       - 8100:8100
+    user: 1009:1009
     volumes:
       - /nfs:/nfs
     environment:
       PORT: 8100
       FLASK_DEBUG: 1
-
-  db:
-    image: postgres
-    container_name: autoseq_launcher_postgres
-    restart: always
-    network_mode: host
-    depends_on:
-      - api
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - PGDATA=/var/lib/postgresql/data
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: autoseq_launcher_pgadmin
-    network_mode: host
-    depends_on:
-      - db
-    ports:
-      - "8050:8050"
-    environment:
-      PGADMIN_LISTEN_PORT: 8050      
-      PGADMIN_DEFAULT_EMAIL: admin@ki.se
-      PGADMIN_DEFAULT_PASSWORD: admin
-    restart: always
