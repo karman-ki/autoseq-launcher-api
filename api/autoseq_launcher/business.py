@@ -70,7 +70,7 @@ def generate_list_to_dict(result):
 		row.append(d)
 	return row
 
-def validate_cfdna_file_size(file_arr):
+def validate_cfdna_file_size(file_arr, anch_user, anch_pwd):
 
 	cfdna_dict = {}
 	for i,f in enumerate(file_arr):
@@ -118,10 +118,10 @@ def validate_cfdna_file_size(file_arr):
 			'''
 			try:
 				ssh_cmd = "ln -s {}/* {}".format(os.path.join(target_dir), os.path.join(symb_source_dir))
-				print(ssh_cmd)
-				ip_address = "anchorage.meb.ki.se"
-				username = "venche"
-				password = "Rudraksh123"
+				machine_config = current_app.config["ANCHORAGE"]
+				ip_address = machine_config['address']
+				username = anch_user
+				password = anch_pwd
 				connectSSHServer(ip_address, password, username, ssh_cmd)
 			except Exception as e:
 				print(str(e))
@@ -211,7 +211,7 @@ def check_db_connection():
 	except Exception as e:
 		return {'status': False, 'data': [], 'error': str(e)}, 400
 
-def upload_orderform(project_name, sample_arr, file_name):
+def upload_orderform(project_name, sample_arr, file_name,  anch_user, anch_pwd):
 
 	file_lst_arr = sample_arr.split(',')
 
@@ -251,7 +251,7 @@ def upload_orderform(project_name, sample_arr, file_name):
 						file_size = subprocess.check_output(['du','-sh', proj_nfs_path]).split()[0].decode('utf-8')
 						file_info_arr.append([file_size, proj_nfs_path, f, fnmatch.fnmatch(f, '*-CFDNA-*'), sample_id, c3_id])
 
-		cfdna_val = validate_cfdna_file_size(file_info_arr)
+		cfdna_val = validate_cfdna_file_size(file_info_arr, anch_user, anch_pwd)
 		
 		curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 		curr_file_arr = list(set(curr_file_arr))
@@ -297,7 +297,7 @@ def upload_orderform(project_name, sample_arr, file_name):
 		return {'status': True, 'data': file_info_arr, 'error': 'Sample Id\'s are not found in the {}'.format(project_nfs_path)}, 200
 
 
-def sample_generate_barcode(project_name, file_lst_arr):
+def sample_generate_barcode(project_name, anch_user, anch_pwd, file_lst_arr):
 
 	file_lst_arr = file_lst_arr.replace('PROBIO', 'PB').split(',')
 
@@ -318,7 +318,7 @@ def sample_generate_barcode(project_name, file_lst_arr):
 
 	if(file_info_arr):
 		
-		cfdna_val = validate_cfdna_file_size(file_info_arr)
+		cfdna_val = validate_cfdna_file_size(file_info_arr, anch_user, anch_pwd)
 
 		curr_file_arr = [ x[2] for x in file_info_arr if x[1] not in cfdna_val]
 		curr_file_arr = list(set(curr_file_arr))

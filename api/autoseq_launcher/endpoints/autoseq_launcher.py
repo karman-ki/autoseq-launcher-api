@@ -99,9 +99,11 @@ class LeaderboardUploadOrdeform(Resource):
         """
         args = upload_file_arguments.parse_args()
         project_name = args['project_name']
+        anch_user = args['anch_user']
+        anch_pwd = args['anch_pwd']
         sample_arr = args['sample_arr']
         file_name = args['file_name']
-        result, errorcode = upload_orderform(project_name, sample_arr, file_name)
+        result, errorcode = upload_orderform(project_name, sample_arr, file_name, anch_user, anch_pwd)
         return result, errorcode 
 
 @ctm.route('/sample_generate_barcode')
@@ -117,9 +119,11 @@ class GenerateProjectBarcode(Resource):
         ```
         """
         args = processing_step_arguments.parse_args()
+        anch_user = args['anch_user']
+        anch_pwd = args['anch_pwd']
         project_name = args['project_name']
         samples = args['samples']
-        result, errorcode = sample_generate_barcode(project_name, samples)
+        result, errorcode = sample_generate_barcode(project_name, anch_user, anch_pwd, samples)
         return result, errorcode
 
 # @ctm.route('/generate_barcode')
