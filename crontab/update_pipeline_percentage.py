@@ -79,10 +79,10 @@ def readJsonFile(path):
     # Flatten data
     df_nested_list = pd.json_normalize(data, record_path =['jobs'])
     total_count = len(df_nested_list.index)
-    completed_count = df_nested_list['status'].value_counts()['COMPLETED']
-    failed_count = df_nested_list['status'].value_counts()['FAILED']
-    cancel_count = df_nested_list['status'].value_counts()['CANCELLED']
-    if failed_count > 0 or cancel_count > 0 :
+    status_df = df_nested_list['status'].value_counts()
+    status_list = dict(status_df)
+    completed_count = status_df['COMPLETED']
+    if "FAILED" in status_list or "CANCELLED" in status_list:
     	fail_status = True
     job_percent = int((completed_count / total_count ) * 100)
     return job_percent,fail_status
@@ -99,7 +99,6 @@ def main():
         res = updateJobPercent(project_id, percentage, pro_status)
         if(fail_status):
            updateJobStatus(job_id, '2')
-        print(res)
     else:
        print("No Records Found")
 
