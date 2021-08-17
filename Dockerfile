@@ -1,6 +1,4 @@
 # Format: FROM repository[:version]
-FROM postgres:latest
-COPY init.sql /docker-entrypoint-initdb.d/
 
 FROM python:3.8
 ENV app_location /usr/src

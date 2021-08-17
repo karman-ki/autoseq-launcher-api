@@ -1,4 +1,4 @@
-from paramiko.ssh_exception import BadHostKeyException
+from paramiko.ssh_exception import AuthenticationException, BadHostKeyException
 from database import db
 # from database.models import CTMBarcode as barcodes
 # from database.models import CTMProject as project
@@ -51,7 +51,7 @@ def connectSSHServer(ip_address, pwd, user, command):
 			outlines=stdout.readlines()
 			result=''.join(outlines)
 		'''
-	except Exception as e:
+	except (AuthenticationException, Exception) as e:
 		print("Exception : {}",format(e))
 		result = False
 		
@@ -620,5 +620,21 @@ def get_out_log_info(out_path):
 			return {'status': True, 'data': contents, 'error': ''}, 200
 		else:
 			return {'status': True, 'data': [], 'error': 'Out log file not found'}, 200
+	except Exception as e:
+		return {'status': False, 'data': [], 'error': str(e)}, 400
+
+
+def syn_data_server(project_name, cutm_id, anch_user, anch_pwd):
+	try:
+		cmd = "nohup rsync -e ssh -avP cust001@caesar.scilifelab.se:/home/cust001/{}/{}-P-* /nfs/{}/INBOX/ &".format(cutm_id, project_name, project_name)
+		machine_config = current_app.config['ANCHORAGE']
+		ip_address = machine_config['address']
+
+		out = connectSSHServer(ip_address, anch_pwd, anch_user, cmd)
+		if(out):
+			return {'status': True, 'data': 'Data Sync started successfully', 'error': ''}, 200
+		else:
+			return {'status': True, 'data': '', 'error': 'Server not connected'}, 200
+
 	except Exception as e:
 		return {'status': False, 'data': [], 'error': str(e)}, 400

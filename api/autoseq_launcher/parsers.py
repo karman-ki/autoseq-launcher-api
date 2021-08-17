@@ -41,3 +41,9 @@ get_job_id_arguments.add_argument('job_id', type=str, required=True)
 
 view_out_log_arguments = reqparse.RequestParser()
 view_out_log_arguments.add_argument('out_path', type=str, required=True)
+
+sync_data_arguments = reqparse.RequestParser()
+sync_data_arguments.add_argument('project_name', type=str, required=True)
+sync_data_arguments.add_argument('cutm_id', type=str, required=True)
+sync_data_arguments.add_argument('anch_user',  type=str, required=True, help="Provide anchorage user")
+sync_data_arguments.add_argument('anch_pwd',  type=str, required=True, help="Provide anchorage password")

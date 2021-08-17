@@ -338,3 +338,24 @@ class GetOutLogInfo(Resource):
         out_log_path = args['out_path']
         result, errorcode = get_out_log_info(out_log_path)
         return result, errorcode  
+
+
+@ctm.route('/sync_data')
+@api.response(200, 'Data Sync completed')
+@api.response(400, 'No data found')
+class GetSyncInfo(Resource):
+    @api.expect(sync_data_arguments, validate=True)       
+    def post(self):
+        """
+            Remote Sync patient data (Anchorage)
+        ```
+
+        ```
+        """
+        args = sync_data_arguments.parse_args()
+        project_name = args['project_name']
+        cutm_id = args['cutm_id']
+        anch_user = args['anch_user']
+        anch_pwd = args['anch_pwd']
+        result, errorcode = syn_data_server(project_name, cutm_id, anch_user, anch_pwd)
+        return result, errorcode  
