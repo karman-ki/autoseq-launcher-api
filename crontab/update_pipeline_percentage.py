@@ -8,6 +8,8 @@ import json
 import pandas as pd
 from configparser import ConfigParser
 import yaml
+import slack
+
 
 def path():
     return os.path.dirname(__file__)
@@ -58,7 +60,7 @@ def fetch_sql_query(sql):
             conn.close()
 
 def getJsonFilePath():
-    sql = "SELECT p.p_id, p.pro_status, j.json_path, j.job_id, j.job_status FROM projects_t as p INNER JOIN jobs_t as j ON p.p_id=j.project_id WHERE p.pro_status='1'"
+    sql = "SELECT p.p_id, p.sample_id, p.pro_status, j.json_path, j.job_id, j.job_status FROM projects_t as p INNER JOIN jobs_t as j ON p.p_id=j.project_id WHERE p.pro_status='1'"
     res_data = fetch_sql_query(sql)
     return res_data
 
@@ -82,8 +84,9 @@ def readJsonFile(path):
     status_df = df_nested_list['status'].value_counts()
     status_list = dict(status_df)
     completed_count = status_df['COMPLETED']
+    fail_status = False
     if "FAILED" in status_list or "CANCELLED" in status_list:
-    	fail_status = True
+      fail_status = True
     job_percent = int((completed_count / total_count ) * 100)
     return job_percent,fail_status
 
@@ -94,11 +97,21 @@ def main():
         project_id = js['p_id']
         file_path = js['json_path']
         job_id = js['job_id']
+        sample_id =js["sample_id"]
         percentage,fail_status = readJsonFile(file_path)
-        pro_status = '2' if(fail_status) else js['pro_status']
+        pro_status = '2' if(fail_status) else ("-1" if (percentage==100) else js['pro_status'])
+        print(pro_status)
+        
         res = updateJobPercent(project_id, percentage, pro_status)
         if(fail_status):
            updateJobStatus(job_id, '2')
+
+        if(percentage == 100):
+          updateJobStatus(job_id, '-1')
+          client = slack.WebClient(token='xoxb-2273869064546-2283449225668-aB23uWVDWPOPE2ixg956YHWH')
+          text = {"text": "{} sample completed".format(sample_id)}
+          client.chat_postMessage(channel='random', text= '{}'.format(text) )
+
     else:
        print("No Records Found")
 
