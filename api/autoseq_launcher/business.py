@@ -16,6 +16,7 @@ import subprocess
 import shutil
 from operator import itemgetter
 from itertools import groupby
+import pandas as pd
 
 
 def connectSSHServer(ip_address, pwd, user, command):
@@ -528,9 +529,39 @@ def start_pipeline(project_id):
 
 def stop_pipeline(project_id):
 	try:
-		db.session.execute("UPDATE projects_t SET pro_status='0' WHERE p_id='{}'" .format(project_id))
-		db.session.commit()
-		return {'status': True, 'data': 'Pipeline stopped successfully', 'error': ''}, 200
+		res = db.session.execute("SELECT j.json_path, p.machine_type FROM jobs_t as j INNER JOIN projects_t as p ON p.p_id = j.project_id WHERE p.p_id = '{}'".format(project_id))
+		row = generate_list_to_dict(res)
+		json_path = row[0]['json_path']
+		machine_type = row[0]['machine_type'].upper()
+
+		if os.path.isfile(json_path):
+			with open(json_path) as data_file:
+				data = json.load(data_file) 
+
+			df = pd.json_normalize(data, 'jobs')
+			job_ids = set(df['jobid'])
+			job_ids = [x.strip(' ') for x in job_ids]
+			cmd = "scancel {}".format(job_ids).replace("', '", "','")
+
+			machine_type = machine_type if machine_type != '' else 'ANCHORAGE'
+		
+			# if machine_type:
+			machine_config = current_app.config[machine_type]
+			ip_address = machine_config['address']
+			username = machine_config['username']
+			password = machine_config['password']
+
+			out = connectSSHServer(ip_address, password, username, cmd)
+
+			if(out):
+				db.session.execute("UPDATE projects_t SET pro_status='0' WHERE p_id='{}'" .format(project_id))
+				db.session.commit()
+				return {'status': True, 'data': 'Pipeline stopped successfully', 'error': ''}, 200
+			else:
+				return {'status': True, 'data': [], 'error': 'Server not connected'}, 200	
+		else:
+			return {'status': True, 'data': [], 'error': 'Json db file not found'}, 200
+		
 
 	except Exception as e:
 		return {'status': False, 'data': [], 'error': str(e)}, 400
