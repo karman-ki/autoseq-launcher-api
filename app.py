@@ -27,6 +27,7 @@ def configure_app(flask_app):
     flask_app.config['SCRATCH_PATH'] = settings.MOUNT_SCRATCH_PATH
     flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
     flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
+    flask_app.config['LPC'] = settings.MOUNT_POINT_LPC
     
     flask_app.config['LIQBIO_PROD'] = settings.LIQBIO_PROD
 

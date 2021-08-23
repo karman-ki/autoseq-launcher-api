@@ -1,8 +1,8 @@
 from flask_restplus import reqparse
 
 generate_barcode_arguments = reqparse.RequestParser()
-generate_barcode_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF'")
+generate_barcode_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LPC'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF',  'LPC'")
 generate_barcode_arguments.add_argument('search_pattern', type=str, required=True,  help='example : PN20210210')
 generate_barcode_arguments.add_argument('sample_arr',  type=str, required=True, help="Jsondata")
 generate_barcode_arguments.add_argument('file_name',  type=str, required=True, help="Upload file name")
@@ -17,16 +17,16 @@ stop_pipeline_arguments = reqparse.RequestParser()
 stop_pipeline_arguments.add_argument('project_id', type=str, required=True)
 
 upload_file_arguments = reqparse.RequestParser()
-upload_file_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF'")
+upload_file_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LPC'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LPC'")
 upload_file_arguments.add_argument('anch_user',  type=str, required=True, help="Provide anchorage user")
 upload_file_arguments.add_argument('anch_pwd',  type=str, required=True, help="Provide anchorage password")
 upload_file_arguments.add_argument('sample_arr',  type=str, required=True, help="Jsondata")
 upload_file_arguments.add_argument('file_name',  type=str, required=True, help="Upload file name")
 
 processing_step_arguments = reqparse.RequestParser()
-processing_step_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF'")
+processing_step_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LPC'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LPC'")
 processing_step_arguments.add_argument('anch_user',  type=str, required=True, help="Provide anchorage user")
 processing_step_arguments.add_argument('anch_pwd',  type=str, required=True, help="Provide anchorage password")
 processing_step_arguments.add_argument('samples', type=str, required=True,  help='[] String')
