@@ -9,12 +9,18 @@ import pandas as pd
 from configparser import ConfigParser
 import yaml
 import slack
-
+import requests
 
 def path():
     return os.path.dirname(__file__)
 
 root_path = path()
+
+def slackPostMsg(text):
+    #web_hook_url = "https://hooks.slack.com/services/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"
+    web_hook_url = "https://hooks.slack.com/services/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"
+    requests.post(web_hook_url, data=str(text))
+    return True
 
 def readConfig(section,filename=root_path+"/config.yml"):
     with open(filename, "r") as ymlfile:
@@ -83,10 +89,16 @@ def readJsonFile(path):
     total_count = len(df_nested_list.index)
     status_df = df_nested_list['status'].value_counts()
     status_list = dict(status_df)
-    completed_count = status_df['COMPLETED']
+    completed_count = 0
+    if "COMPLETED" in status_list:
+      completed_count = status_df['COMPLETED']
+
     fail_status = False
-    if "FAILED" in status_list or "CANCELLED" in status_list:
+    if "FAILED" in status_list:
       fail_status = True
+    if "CANCELLED" in status_list:
+    	completed_count = completed_count + status_df['CANCELLED']
+
     job_percent = int((completed_count / total_count ) * 100)
     return job_percent,fail_status
 
@@ -100,17 +112,19 @@ def main():
         sample_id =js["sample_id"]
         percentage,fail_status = readJsonFile(file_path)
         pro_status = '2' if(fail_status) else ("-1" if (percentage==100) else js['pro_status'])
-        print(pro_status)
         
-        res = updateJobPercent(project_id, percentage, pro_status)
         if(fail_status):
            updateJobStatus(job_id, '2')
+           text = {"text": "{} sample Failed".format(sample_id)}
+           slackPostMsg(text)
 
         if(percentage == 100):
           updateJobStatus(job_id, '-1')
-          client = slack.WebClient(token='xoxb-2273869064546-2283449225668-aB23uWVDWPOPE2ixg956YHWH')
           text = {"text": "{} sample completed".format(sample_id)}
-          client.chat_postMessage(channel='random', text= '{}'.format(text) )
+          slackPostMsg(text)
+	
+        print("SAMPLE ID :", sample_id, " || PROJECT ID : ", project_id, " || PERCENTAGE :", percentage," || FAIL STATUS :", fail_status, " || PROJECT STATUS :", pro_status)
+        res = updateJobPercent(project_id, percentage, pro_status)
 
     else:
        print("No Records Found")
