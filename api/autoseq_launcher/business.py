@@ -467,23 +467,28 @@ def get_job_list():
 		return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def start_pipeline(project_id):
-	res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))
+	res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.tumor, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))
 	row = generate_list_to_dict(res)
 	project_name = row[0]['project_name']
 	sdid = row[0]['sample_id']
-	cfdna = row[0]['cfdna']
+	cfdna = row[0]['cfdna'] 
 	normal = row[0]['normal']
+	tumor = row[0]['tumor']
 	json_path = row[0]['config_path']
 
 	ref_genome = current_app.config['REF_GENOME_PATH']
 	scratch_path = current_app.config['SCRATCH_PATH']
 	libdir = current_app.config[project_name] + 'INBOX/'
-	outdir_root = current_app.config[project_name]+'autoseq-output'
+	outdir_root = current_app.config[project_name]+'autoseq-output' if project_name != "LPC" else "/nfs/PROBIO3/LPC/autoseq-output"
+
 	cores = row[0]['cores']
 	machine_type = row[0]['machine_type'].upper()
 
 
-	id = cfdna+'_'+normal
+	if(cfdna):
+		id = cfdna+'_'+normal
+	else:
+		id = tumor+'_'+normal
 
 	outdir = os.path.join(outdir_root, sdid, id)
 	jobdb = os.path.join(outdir, id)+'.jobdb.json'
@@ -612,7 +617,10 @@ def view_log_analysis_info(job_id):
 			f=open(log_path, "r")
 			contents =f.read()
 			f.close()
-			return {'status': True, 'data': contents, 'error': ''}, 200
+			if(contents != ""):
+				return {'status': True, 'data': contents, 'error': ''}, 200
+			else:
+				return {'status': True, 'data': '', 'error': 'Log file is empty'}, 200
 		else:
 			return {'status': True, 'data': [], 'error': 'Log file not found'}, 200
 	except Exception as e:
@@ -657,7 +665,13 @@ def get_out_log_info(out_path):
 
 def syn_data_server(project_name, cutm_id, anch_user, anch_pwd):
 	try:
-		cmd = "nohup rsync -e ssh -avP cust001@caesar.scilifelab.se:/home/cust001/{}/{}-P-* /nfs/{}/INBOX/ &".format(cutm_id, project_name, project_name)
+		project_folder = "PB" if (project_name == "PROBIO") else "PSFF"
+		current_date = datetime.today().strftime("%Y-%m-%d")
+
+		log_path = current_app.config[project_name]+'rsyn_'+cutm_id+'_'+current_date+'.nohup.log'
+
+		cmd = "nohup rsync -e ssh -avP cust001@caesar.scilifelab.se:/home/cust001/inbox/{}/{}* /nfs/{}/INBOX/ >> {} &".format(cutm_id, project_folder, project_name, log_path)
+		print(cmd)
 		machine_config = current_app.config['ANCHORAGE']
 		ip_address = machine_config['address']
 
