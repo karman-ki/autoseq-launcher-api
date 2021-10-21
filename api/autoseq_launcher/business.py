@@ -117,10 +117,10 @@ def validate_cfdna_file_size(file_arr, anch_user, anch_pwd):
                                     os.symlink(os.path.join(target_dir, file_name), os.path.join(symb_source_dir, file_name))
 			'''
 			try:
+			        
 				ssh_cmd = "ln -s {}/* {}".format(os.path.join(target_dir), os.path.join(symb_source_dir))
 				machine_config = current_app.config["ANCHORAGE"]
 				ip_address = machine_config['address']
-
 				out = connectSSHServer(ip_address, anch_pwd, anch_user, ssh_cmd)
 				if(not out):
 					return {'status': True, 'data': [], 'error': 'Server not connected'}, 200		
@@ -467,7 +467,7 @@ def get_job_list():
 		return {'status': False, 'data': [], 'error': str(e)}, 400
 
 def start_pipeline(project_id):
-	res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.tumor, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status='0' order by p.p_id desc limit 1".format(project_id))
+	res = db.session.execute("SELECT b.project_name, p.sample_id, p.cfdna, p.normal, p.tumor, p.config_path, p.pro_status, CASE WHEN p.cores IS NULL THEN '8' ELSE p.cores END as cores, CASE WHEN p.machine_type IS NULL THEN '' ELSE p.machine_type END as machine_type from projects_t as p INNER JOIN barcodes_t as b ON b.b_id = p.barcode_id WHERE p.p_id ='{}' and p.pro_status !='1' order by p.p_id desc limit 1".format(project_id))
 	row = generate_list_to_dict(res)
 	project_name = row[0]['project_name']
 	sdid = row[0]['sample_id']
@@ -555,8 +555,9 @@ def stop_pipeline(project_id):
 			ip_address = machine_config['address']
 			username = machine_config['username']
 			password = machine_config['password']
-
-			out = connectSSHServer(ip_address, password, username, cmd)
+			
+			print(cmd)
+			'''out = connectSSHServer(ip_address, password, username, cmd)
 
 			if(out):
 				db.session.execute("UPDATE projects_t SET pro_status='0' WHERE p_id='{}'" .format(project_id))
@@ -564,6 +565,7 @@ def stop_pipeline(project_id):
 				return {'status': True, 'data': 'Pipeline stopped successfully', 'error': ''}, 200
 			else:
 				return {'status': True, 'data': [], 'error': 'Server not connected'}, 200	
+		       '''
 		else:
 			return {'status': True, 'data': [], 'error': 'Json db file not found'}, 200
 		
@@ -665,13 +667,12 @@ def get_out_log_info(out_path):
 
 def syn_data_server(project_name, cutm_id, anch_user, anch_pwd):
 	try:
-		project_folder = "PB" if (project_name == "PROBIO") else "PSFF"
+		project_folder = "PB-" if (project_name == "PROBIO") else "PSFF"
 		current_date = datetime.today().strftime("%Y-%m-%d")
 
 		log_path = current_app.config[project_name]+'rsyn_'+cutm_id+'_'+current_date+'.nohup.log'
 
-		cmd = "nohup rsync -e ssh -avP cust001@caesar.scilifelab.se:/home/cust001/inbox/{}/{}* /nfs/{}/INBOX/ >> {} &".format(cutm_id, project_folder, project_name, log_path)
-		print(cmd)
+		cmd = "nohup rsync -e ssh -avP cust001@caesar.scilifelab.se:/home/cust001/inbox/{}/{}* /nfs/{}/INBOX >> {} &".format(cutm_id, project_folder, project_name, log_path)
 		machine_config = current_app.config['ANCHORAGE']
 		ip_address = machine_config['address']
 

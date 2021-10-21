@@ -184,7 +184,7 @@ class GenerateStartPipeline(Resource):
 @ctm.route('/stop_pipline')
 @api.response(200, 'Pipeline stop successfully')
 @api.response(400, 'Database connection failed')               
-class GenerateStartPipeline(Resource):
+class GenerateStopPipeline(Resource):
     @api.expect(stop_pipeline_arguments, validate=True)       
     def post(self):
         """
