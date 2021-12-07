@@ -2,8 +2,8 @@ CREATE USER referral_writer WITH ENCRYPTED PASSWORD 'ProbioWriter';
 CREATE DATABASE autoseq_launcher;
 GRANT ALL PRIVILEGES ON DATABASE autoseq_launcher TO referral_writer;
 
-CREATE TYPE project_status AS ENUM ('0','1', '2', '-1');
-CREATE TYPE job_status AS ENUM ('0','1', '2', '-1');
+CREATE TYPE project_status AS ENUM ('0','1', '2', '-1', '-2');
+CREATE TYPE job_status AS ENUM ('0','1', '2', '-1', '-2');
 CREATE TYPE launch_step AS ENUM ('0','1');
 
 CREATE TABLE barcodes_t
